@@ -1,7 +1,7 @@
 from loadFile import read_file
 
 
-MATRIX_TEXT = read_file("./2023/dec10File.txt")
+MATRIX_TEXT = read_file("./dec10File.txt")
 CONNECTIONS = {
     "S": {
         "N": set(["|", "7", "F"]),
@@ -194,10 +194,10 @@ class Matrix:
                             and "S" in CONNECTIONS[prevChar]
                             and "N" not in CONNECTIONS[prevChar]
                             and (
-                                eastConnection
-                                and "W" in CONNECTIONS[prevChar]
-                                or westConnection
-                                and "E" in CONNECTIONS[prevChar]
+                                # eastConnection
+                                # and prevChar in CONNECTIONS[char]["E"]
+                                westConnection
+                                and prevChar in CONNECTIONS[char]["W"]
                             )
                         ) or (
                             southConnection
@@ -205,18 +205,26 @@ class Matrix:
                             and "N" in CONNECTIONS[prevChar]
                             and "S" not in CONNECTIONS[prevChar]
                             and (
-                                eastConnection
-                                and "W" in CONNECTIONS[prevChar]
-                                or westConnection
-                                and "E" in CONNECTIONS[prevChar]
+                                # eastConnection
+                                # and prevChar in CONNECTIONS[char]["E"]
+                                westConnection
+                                and prevChar in CONNECTIONS[char]["W"]
                             )
                         ):
                             if len(pathsInRow) % 2 == 1:
                                 pathsInRow.pop()
                                 pathsInRow.append(xIndex)
                             else:
+                                allPath = True
+                                for i in range(pathsInRow[-1], xIndex):
+                                    coord = tuple([i, yIndex])
+                                    if coord not in self.path:
+                                        allPath = False
+                                        break
+                                if allPath:
+                                    pathsInRow.pop()
                                 pathsInRow.append(xIndex)
-                            print(prevChar, char, pathsInRow)
+                            # print(prevChar, char, pathsInRow)
                         else:
                             pathsInRow.append(xIndex)
                     else:
@@ -233,7 +241,7 @@ class Matrix:
             countForRow = 0
             print(f"found {len(pathsInRow)} paths in row {yIndex}", pathsInRow)
             for i in range(0, len(pathsInRow) - 1, 2):
-                print("searching", pathsInRow[i], pathsInRow[i + 1])
+                # print("searching", pathsInRow[i], pathsInRow[i + 1])
                 for x in range(pathsInRow[i], pathsInRow[i + 1]):
                     coord = tuple([x, yIndex])
                     if coord in self.path:
