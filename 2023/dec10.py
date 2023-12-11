@@ -176,27 +176,69 @@ class Matrix:
                 coord = tuple([xIndex, yIndex])
                 char = self.at(xIndex, yIndex)
 
-                if coord in self.path and (
-                    "N" in CONNECTIONS[char] or "S" in CONNECTIONS[char]
-                ):
-                    pathsInRow.append(xIndex)
+                northConnection = char in CONNECTIONS and "N" in CONNECTIONS[char]
+                southConnection = char in CONNECTIONS and "S" in CONNECTIONS[char]
+                if coord in self.path and (northConnection or southConnection):
+                    if len(pathsInRow) > 0:
+                        prevPathInRow = pathsInRow[-1]
+                        prevChar = self.at(prevPathInRow, yIndex)
+                        eastConnection = (
+                            char in CONNECTIONS and "E" in CONNECTIONS[char]
+                        )
+                        westConnection = (
+                            char in CONNECTIONS and "W" in CONNECTIONS[char]
+                        )
+                        if (
+                            northConnection
+                            and not southConnection
+                            and "S" in CONNECTIONS[prevChar]
+                            and "N" not in CONNECTIONS[prevChar]
+                            and (
+                                eastConnection
+                                and "W" in CONNECTIONS[prevChar]
+                                or westConnection
+                                and "E" in CONNECTIONS[prevChar]
+                            )
+                        ) or (
+                            southConnection
+                            and not northConnection
+                            and "N" in CONNECTIONS[prevChar]
+                            and "S" not in CONNECTIONS[prevChar]
+                            and (
+                                eastConnection
+                                and "W" in CONNECTIONS[prevChar]
+                                or westConnection
+                                and "E" in CONNECTIONS[prevChar]
+                            )
+                        ):
+                            if len(pathsInRow) % 2 == 1:
+                                pathsInRow.pop()
+                                pathsInRow.append(xIndex)
+                            else:
+                                pathsInRow.append(xIndex)
+                            print(prevChar, char, pathsInRow)
+                        else:
+                            pathsInRow.append(xIndex)
+                    else:
+                        pathsInRow.append(xIndex)
 
-            if (len(pathsInRow) - 1) == pathsInRow[-1] - pathsInRow[0]:
-                print(
-                    "No non path tiles in this row",
-                    len(pathsInRow) - 1,
-                    pathsInRow[-1] - pathsInRow[0],
-                )
-                print()
-                continue
+            # if (len(pathsInRow) - 1) == pathsInRow[-1] - pathsInRow[0]:
+            #     print(
+            #         "No non path tiles in this row",
+            #         len(pathsInRow) - 1,
+            #         pathsInRow[-1] - pathsInRow[0],
+            #     )
+            #     print()
+            #     continue
             countForRow = 0
-            print(f"found {len(pathsInRow)} paths in row {yIndex}")
+            print(f"found {len(pathsInRow)} paths in row {yIndex}", pathsInRow)
             for i in range(0, len(pathsInRow) - 1, 2):
                 print("searching", pathsInRow[i], pathsInRow[i + 1])
                 for x in range(pathsInRow[i], pathsInRow[i + 1]):
                     coord = tuple([x, yIndex])
                     if coord in self.path:
                         continue
+                    print(f"found coord at {x}, {yIndex}")
                     countForRow += 1
                 # numTiles = pathsInRow[i + 1] - pathsInRow[i] - 1
             print(f"Found {countForRow} non path tiles")
