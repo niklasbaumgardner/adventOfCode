@@ -1,15 +1,20 @@
 from loadFile import read_file
 
 
-MATRIX_TEXT = read_file("dec10File.txt")
-CONNECTERS = {
+MATRIX_TEXT = read_file("./2023/dec10File.txt")
+CONNECTIONS = {
+    "S": {
+        "N": set(["|", "7", "F"]),
+        "S": set(["|", "L", "J"]),
+        "E": set(["-", "7", "J"]),
+        "W": set(["-", "L", "F"]),
+    },
     "|": {"N": set(["|", "7", "F"]), "S": set(["|", "L", "J"])},
     "-": {"E": set(["-", "7", "J"]), "W": set(["-", "L", "F"])},
-    # the rest need fixing
-    "L": {"N": set(["|", "7", "F"]), "W": set(["|", "7", "F"])},
-    "J": {"S": set(["|", "7", "F"]), "E": set(["|", "7", "F"])},
-    "7": {"N": set(["|", "7", "F"]), "E": set(["|", "7", "F"])},
-    "F": {"N": set(["|", "7", "F"]), "W": set(["|", "7", "F"])},
+    "L": {"N": set(["|", "7", "F"]), "E": set(["-", "7", "J"])},
+    "J": {"N": set(["|", "7", "F"]), "W": set(["-", "L", "F"])},
+    "7": {"S": set(["|", "L", "J"]), "W": set(["-", "L", "F"])},
+    "F": {"S": set(["|", "L", "J"]), "E": set(["-", "7", "J"])},
 }
 
 # CONNECTERS = {
@@ -73,10 +78,14 @@ class Matrix:
     def isStepValid(self, curr, next):
         currX, currY = curr
         nextX, nextY = next
-        char = self.at(nextX, nextY)
+        currChar = self.at(currX, currY)
+        nextChar = self.at(nextX, nextY)
 
-        if char is None:
-            return False, None
+        if nextChar is None:
+            return False
+
+        if nextChar not in CONNECTIONS:
+            return False
 
         dir = ""
         xDiff = nextX - currX
@@ -91,20 +100,13 @@ class Matrix:
         elif yDiff == -1:
             dir = "N"
 
-        print("direction:", dir, curr, next)
+        # print("direction:", dir, currChar, nextChar)
 
-        if char not in CONNECTERS:
+        if dir not in CONNECTIONS[currChar]:
             return False
 
-        print(dir in CONNECTERS[char], dir, CONNECTERS[char])
-        return dir in CONNECTERS[char]
-        transform = CONNECTERS[char].get(dir)
-        # print("transform:", transform)
-
-        if transform is None:
-            return False
-
-        return True
+        # print(nextChar in CONNECTIONS[currChar][dir])
+        return nextChar in CONNECTIONS[currChar][dir]
 
     def getSPosition(self):
         for yIndex, row in enumerate(self.matrix):
@@ -114,66 +116,26 @@ class Matrix:
 
     def createPath(self):
         start = self.getSPosition()
-        print("start:", start)
 
         nextSteps = [start]
-        # visited = dict()  # coord -> num times visited
-        visited = set()
         path = dict()  # coord -> set(next coords)
-        stepsAway = 0
-        paths = dict()  # coord -> path
-
-        print(nextSteps)
 
         while nextSteps:
             curr = nextSteps.pop(0)
             x, y = curr
-            # print("current:", curr)
-            visited.add(curr)
-            # if curr in visited:
-            #     visited[curr] += 1
-            # else:
-            #     visited[curr] = 1
-            # print("visited:", visited)
-            # if curr in path:
-            #     path[curr] = min([path[curr], stepsAway])
-            # else:
-            #     path[curr] = stepsAway
+            char = self.at(x, y)
 
             adjCoords = self.getAdjacentCoords(x, y)
-            # print("adjacent:", adjCoords)
             for nextStep in adjCoords:
                 stepIsValid = self.isStepValid(curr, nextStep)
-                # numTimesVisited = visited.get(nextStep)
-                # if (
-                #     stepIsValid
-                #     and numTimesVisited is None
-                #     or (numTimesVisited is not None and numTimesVisited < 3)
-                # ):
                 if stepIsValid and nextStep not in path:
                     nextSteps.append(nextStep)
 
-                    if path.get(curr):
-                        print(
-                            "more than 1 option",
-                            self.matrix[y][x],
-                            curr,
-                            nextStep,
-                            path.get(curr),
-                        )
-                        path[curr].add(nextStep)
-                        stepsAway += 1
-                        if stepsAway > 2:
-                            return
-
+                    if char == "S" and path.get(curr):
+                        path[curr].append(nextStep)
                     else:
-                        path[curr] = set([nextStep])
+                        path[curr] = [nextStep]
 
-            print("next steps:", nextSteps)
-            print()
-            # stepsAway += 1
-            # if stepsAway == 2:
-            # return path
         for k in path.keys():
             path[k] = list(path[k])
 
@@ -182,13 +144,17 @@ class Matrix:
         return path, start
 
     def walkMap(self, node):
-        if node is None:
-            return 0
+        depth = 0
+        while node is not None:
+            if node is None:
+                break
 
-        node = node[0]
-        print("i am here", node)
+            depth += 1
 
-        return 1 + self.walkMap(self.path.get(node))
+            nextNode = self.path.get(node[0])
+            node = nextNode
+
+        return depth
 
     def countPath(self):
         nodes = self.path[self.start]
@@ -200,6 +166,46 @@ class Matrix:
 
         return max(allPathLengths)
 
+    def countTilesInsidePath(self):
+        # if there is two paths on a col, then all tiles inbetween are inside
+        # if more than two paths on col, then the its the tiles between 0 and 1, 2 and 3, 4 and 5, etc
+        count = 0
+        for yIndex, row in enumerate(self.matrix):
+            pathsInRow = []
+            for xIndex in range(len(row)):
+                coord = tuple([xIndex, yIndex])
+                char = self.at(xIndex, yIndex)
+
+                if coord in self.path and (
+                    "N" in CONNECTIONS[char] or "S" in CONNECTIONS[char]
+                ):
+                    pathsInRow.append(xIndex)
+
+            if (len(pathsInRow) - 1) == pathsInRow[-1] - pathsInRow[0]:
+                print(
+                    "No non path tiles in this row",
+                    len(pathsInRow) - 1,
+                    pathsInRow[-1] - pathsInRow[0],
+                )
+                print()
+                continue
+            countForRow = 0
+            print(f"found {len(pathsInRow)} paths in row {yIndex}")
+            for i in range(0, len(pathsInRow) - 1, 2):
+                print("searching", pathsInRow[i], pathsInRow[i + 1])
+                for x in range(pathsInRow[i], pathsInRow[i + 1]):
+                    coord = tuple([x, yIndex])
+                    if coord in self.path:
+                        continue
+                    countForRow += 1
+                # numTiles = pathsInRow[i + 1] - pathsInRow[i] - 1
+            print(f"Found {countForRow} non path tiles")
+            print()
+
+            count += countForRow
+
+        return count
+
 
 def part1():
     matrix = Matrix(MATRIX_TEXT)
@@ -207,23 +213,25 @@ def part1():
 
     matrix.createPath()
 
-    print("path:")
-    for k, v in matrix.path.items():
-        print(f"{k}: {v}")
+    # print("path:")
+    # for k, v in matrix.path.items():
+    #     print(f"{k}: {v}")
     print(len(matrix.path))
 
     length = matrix.countPath()
     print("length of path:", length)
 
-    # currNode = start
-    # while currNode:
-    #     nextNodes = path[currNode]
-
-    #     for nNodes in nextNodes:
+    # correct number is 6951
 
 
 def part2():
-    pass
+    matrix = Matrix(MATRIX_TEXT)
+
+    matrix.createPath()
+
+    count = matrix.countTilesInsidePath()
+
+    print(f"There are {count} tiles inside the path")
 
 
 def main():
