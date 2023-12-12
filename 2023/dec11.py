@@ -6,8 +6,7 @@ SPACE_TEXT = read_file("./2023/dec11File.txt")
 
 class Matrix:
     def __init__(self, matrixText, space_growth=1):
-        self.space_growth = space_growth
-        print(self.space_growth)
+        self.space_growth = space_growth - 1
         self.matrixFromString(matrixText=matrixText)
         self.checkForCosmicExpansion()
         self.findGalaxies()
@@ -41,15 +40,11 @@ class Matrix:
 
     def getExpandedSpacePosition(self, pos):
         x, y = pos
-        expandedX = (
-            self.space_growth * len([col for col in self.insertSpaceColsAt if col < x])
-            + x
-        )
+        colsLessThanX = [col for col in self.insertSpaceColsAt if col < x]
+        expandedX = (self.space_growth * len(colsLessThanX)) + x
 
-        expandedY = (
-            self.space_growth * len([row for row in self.insertSpaceRowsAt if row < y])
-            + y
-        )
+        rowsLessThanY = [row for row in self.insertSpaceRowsAt if row < y]
+        expandedY = (self.space_growth * len(rowsLessThanY)) + y
 
         return [expandedX, expandedY]
 
@@ -72,8 +67,8 @@ class Matrix:
 
             self.insertSpaceColsAt.append(x)
 
-        print(self.insertSpaceRowsAt)
-        print(self.insertSpaceColsAt)
+        # print("rows", self.insertSpaceRowsAt)
+        # print("cols", self.insertSpaceColsAt)
 
     def findGalaxies(self):
         self.galaxies = []
@@ -117,7 +112,7 @@ def part1():
 
 
 def part2():
-    SPACE = Matrix(SPACE_TEXT, 10)
+    SPACE = Matrix(SPACE_TEXT, 1000000)
 
     distance = SPACE.getDistanceBetweenAllGalaxies()
 
