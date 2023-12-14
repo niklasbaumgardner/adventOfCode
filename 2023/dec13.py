@@ -1,4 +1,3 @@
-from typing import Any
 from loadFile import read_file
 import numpy as np
 
