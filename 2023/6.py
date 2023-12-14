@@ -1,7 +1,7 @@
 from loadFile import read_file
 
 
-TIMES_AND_DISTANCES = read_file("./2023/dec6File.txt")
+TIMES_AND_DISTANCES = read_file("./2023/6.txt")
 
 
 def parse(string):

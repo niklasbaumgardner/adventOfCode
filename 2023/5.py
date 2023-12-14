@@ -1,7 +1,7 @@
 from loadFile import read_file
 import re
 
-MAP_TEXT = read_file("./2023/dec5File.txt")
+MAP_TEXT = read_file("./2023/5.txt")
 
 
 class Map:

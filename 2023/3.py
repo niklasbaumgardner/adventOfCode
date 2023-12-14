@@ -1,7 +1,7 @@
 from loadFile import read_file
 import re
 
-MATRIX_TEXT = read_file("dec3File.txt")
+MATRIX_TEXT = read_file("./2023/3.txt")
 SYMBOLS = set(["/", "@", "=", "%", "&", "*", "$", "-", "+", "#"])
 
 

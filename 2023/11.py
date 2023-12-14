@@ -1,7 +1,7 @@
 from loadFile import read_file
 
 
-SPACE_TEXT = read_file("./2023/dec11File.txt")
+SPACE_TEXT = read_file("./2023/11.txt")
 
 
 class Matrix:

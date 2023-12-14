@@ -6,7 +6,7 @@ from functools import cache
 # sys.setrecursionlimit(99999)
 
 
-SPRINGS_TEXT = read_file("./2023/dec12File.txt")
+SPRINGS_TEXT = read_file("./2023/12.txt")
 
 
 def findAllInString(s, ch):

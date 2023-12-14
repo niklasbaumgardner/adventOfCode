@@ -4,7 +4,7 @@ from loadFile import read_file
 def getHistory():
     return [
         [int(char) for char in line.split(" ")]
-        for line in read_file("dec9File.txt").split("\n")
+        for line in read_file("./2023/9.txt").split("\n")
     ]
 
 

@@ -1,7 +1,7 @@
 from loadFile import read_file
 
 
-MATRIX_TEXT = read_file("./dec10File.txt")
+MATRIX_TEXT = read_file("./2023/10.txt")
 CONNECTIONS = {
     "S": {
         "N": set(["|", "7", "F"]),

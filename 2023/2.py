@@ -2,7 +2,7 @@ from loadFile import read_file
 import re
 import math
 
-GAME_TEXT = read_file("dec2GameFile.txt")
+GAME_TEXT = read_file("./2023/2.txt")
 # print(GAME_TEXT)
 
 MAX_RED = 12

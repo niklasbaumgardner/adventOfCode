@@ -1,7 +1,7 @@
 from loadFile import read_file
 import re
 
-CARDS_TEXT = read_file("dec4File.txt")
+CARDS_TEXT = read_file("./2023/4.txt")
 
 
 def createsCardsList(text):

@@ -33,7 +33,7 @@ CRAZY_CARD_RANKS = {
     "A": 14,
 }
 
-HANDS_STRING = read_file("./2023/dec7File.txt")
+HANDS_STRING = read_file("./2023/7.txt")
 
 
 class Card:

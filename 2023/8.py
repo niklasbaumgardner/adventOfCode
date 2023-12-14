@@ -1,8 +1,8 @@
 from loadFile import read_file
 import math
 
-INSTRUCTIONS = read_file("dec8Instructions.txt")
-MAP = read_file("dec8Map.txt")
+INSTRUCTIONS = read_file("./2023/8Instructions.txt")
+MAP = read_file("./2023/8Map.txt")
 
 
 def create_map(map):

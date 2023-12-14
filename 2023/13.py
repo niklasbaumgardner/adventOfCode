@@ -4,7 +4,7 @@ import numpy as np
 # from functools import cache
 
 
-PUZZLE_TEXT = read_file("./2023/dec13File.txt")
+PUZZLE_TEXT = read_file("./2023/13.txt")
 
 
 class Matrix:
