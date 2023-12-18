@@ -1,6 +1,7 @@
 from loadFile import read_file
 import sys
-import queue
+
+# import queue
 
 HEATLOSS_MAP_TEXT = read_file("./2023/17.txt")
 
@@ -27,8 +28,10 @@ class Node:
 
 
 class Map:
-    def __init__(self, string):
+    def __init__(self, string, minStreak, maxStreak):
         self.string = string
+        self.minStreak = minStreak
+        self.maxStreak = maxStreak
         self.parse()
         self.constructGraph()
         self.endX = self.maxX() - 1
@@ -94,11 +97,6 @@ class Map:
             return None
         return self.matrix[y][x]
 
-    def move(self, x, y, dir, heatLoss, currentStraight):
-        node = self.get(x, y)
-        if node is None:
-            return 0
-
     def distanceFromEnd(self, node):
         return abs(self.maxX() - 1 - node.x) + abs(self.maxY() - 1 - node.y)
 
@@ -108,141 +106,85 @@ class Map:
 
         # open = [(self.get(0, 0), "dir", 0, 0)]
         # closed = []
-        frontier = queue.PriorityQueue()
+        # frontier = queue.PriorityQueue()
+        frontier = []
 
         cameFrom = {}
         costSoFar = {}
 
-        temp = [(self.get(0, 0), "r", 0), (self.get(0, 0), "d", 0)]
+        temp = [(self.get(0, 0), "u", 0), (self.get(0, 0), "l", 0)]
         for n in temp:
-            frontier.put(n, 0)
+            frontier.append(n)
             cameFrom[n] = None
             costSoFar[n] = 0
 
         # shortestPath = {}
         # prevNodes = {}
 
-        while not frontier.empty():
+        while frontier:
             # What node is the correct node?
-            # frontier.sort(key=lambda n: n[-1])
-            currNode = frontier.get()
+            # frontier.sort(key=lambda n: n[-1], reverse=True)
+            # frontier.sort(key=lambda n: costSoFar[n])
+            # frontier.sort(key=lambda n: n[0].x + n[0].y)
+            frontier.sort(key=lambda n: n[0].x + n[0].y, reverse=True)
+            frontier.sort(key=lambda n: costSoFar[n])
+            # print(frontier[:10])
+            # frontier.sort(key=lambda n: costSoFar[n])
+            # currNode = frontier.get()
+            currNode = frontier.pop(0)
             # print(f"checking node {currNode}")
 
             node, dir, step = currNode
 
-            if node.x == self.endX and node.y == self.endY:
+            if node.x == self.endX and node.y == self.endY and step >= self.minStreak:
+                print(currNode, costSoFar[currNode])
+                # print("are we gettinng here?")
                 break
 
+            # print("current", currNode)
             neighbors = [(n, d) for n, d in self.graph[node]]
             for neighbor in neighbors:
                 nNode, d = neighbor
-                newStep = step + 1 if dir == d else 0
-                if newStep > 2:
+
+                if d == OPP_DIR[dir]:
+                    continue
+
+                newStep = step + 1 if dir == d else 1
+                if newStep > self.maxStreak:
+                    continue
+
+                if step < self.minStreak and dir != d:
                     continue
 
                 next = (nNode, d, newStep)
+
+                # print("next", next)
 
                 newHeatLoss = costSoFar[currNode] + nNode.heatLoss
 
                 if next not in costSoFar or newHeatLoss < costSoFar[next]:
                     costSoFar[next] = newHeatLoss
-                    priority = newHeatLoss + self.distanceFromEnd(nNode)
-                    frontier.put(next, priority)
+                    # priority = newHeatLoss + self.distanceFromEnd(nNode)
+                    # frontier.put(next, priority)
+                    frontier.append(next)
                     cameFrom[next] = currNode
+
+                    # if nNode.x == self.endX and nNode.y == self.endY:
+                    #     print(next, costSoFar[next])
+                    #     print("neighbor node")
+                    #     print()
+                    #     break
                 # if newStep <= 3:
                 #     open.append((nNode, d, newStep, tempHeatLoss))
+            # print()
 
         return cameFrom, costSoFar
-
-    def doDijkstra(self):
-        # unvisitedNodes = [
-        #     (n, dir) for row in self.matrix for n in row for dir in "lrud"
-        # ]
-        unvisitedNodes = []
-        for k, v in self.graph.items():
-            unvisitedNodes += v
-
-        # print("HERE", unvisitedNodes)
-        # unvisitedNodes.sort(key=lambda n: n[0].x)
-        # unvisitedNodes.sort(key=lambda n: n[0].y)
-        # print(unvisitedNodes[:20])
-
-        shortestPath = {}
-        prevNodes = {}
-        for node in unvisitedNodes:
-            shortestPath[node] = 999999999999999999
-
-        startingNode = self.get(0, 0)
-        for dir in "rd":
-            shortestPath[(startingNode, dir)] = 0
-        count = 0
-        while unvisitedNodes:
-            currMinNode, dir = None, None
-            for node, d in unvisitedNodes:
-                if currMinNode is None:
-                    currMinNode = node
-                    dir = d
-                elif shortestPath[(node, d)] < shortestPath[(currMinNode, dir)]:
-                    currMinNode = node
-                    dir = d
-
-            # if node == self.get(self.maxX(), self.maxY()):
-            #     break
-
-            pNodeTup = prevNodes.get((currMinNode, dir))
-            # print(pNode)
-            p2Node = prevNodes.get(pNodeTup)
-            p3NodeTup = prevNodes.get(p2Node)
-            p3Node, p3Dir = p3NodeTup if p3NodeTup else (None, None)
-
-            neighbors = [(n, d) for n, d in self.graph[currMinNode]]
-            # print(neighbors, p3Node)
-
-            if pNodeTup in neighbors:
-                neighbors.remove(pNodeTup)
-
-            if p3Node and (abs(currMinNode.x - p3Node.x) > 2):
-                numInlineX = currMinNode.x - p3Node.x
-                nextNodeInlineX = self.get(
-                    currMinNode.x + (1 if numInlineX > 0 else -1), currMinNode.y
-                )
-                # if nextNodeInlineX:
-                #     print(currMinNode, nextNodeInlineX, numInlineX, neighbors)
-                temp = (nextNodeInlineX, "l" if numInlineX > 0 else "r")
-                if temp in neighbors:
-                    neighbors.remove(temp)
-
-            if p3Node and (abs(currMinNode.y - p3Node.y) > 2):
-                numInlineY = currMinNode.y - p3Node.y
-                nextNodeInlineY = self.get(
-                    currMinNode.x, currMinNode.y + (1 if numInlineY > 0 else -1)
-                )
-                # print(nextNodeInlineY, neighbors)
-                temp = (nextNodeInlineY, "u" if numInlineY > 0 else "d")
-                if temp in neighbors:
-                    neighbors.remove(temp)
-
-            for neighbor, d in neighbors:
-                # if pNodeTup:
-                #     print(pNodeTup[0], pNodeTup[1])
-                # print(currMinNode, dir, "|", neighbor, d)
-                tempHeatLoss = shortestPath[(currMinNode, dir)] + neighbor.heatLoss
-                if tempHeatLoss < shortestPath[(neighbor, d)]:
-                    shortestPath[(neighbor, d)] = tempHeatLoss
-
-                    prevNodes[(neighbor, d)] = (currMinNode, dir)
-            # print()
-            # if count > 4:
-            #     return None, None
-            # count += 1
-            unvisitedNodes.remove((currMinNode, dir))
-        return prevNodes, shortestPath
 
 
 def part1():
     print("Part 1")
 
-    m = Map(HEATLOSS_MAP_TEXT)
+    m = Map(HEATLOSS_MAP_TEXT, 1, 3)
     # print(m)
 
     cameFrom, costSoFar = m.doDijkstra2()
@@ -251,55 +193,64 @@ def part1():
     node = m.get(m.maxX() - 1, m.maxY() - 1)
     # # for ch in "ul":
     # #     print(costSoFar[(node, ch, 0)])
+    pathNodes = []
     for k, v in costSoFar.items():
         n, d, s = k
         if n.x == node.x and n.y == node.y:
-            print(node, d, s, v)
+            pathNodes.append(((node, d, s), v))
 
-    print()
+    pathNodes.sort(key=lambda x: x[-1])
+    # print(pathNodes)
+
+    print(f"Min heat loss path is {pathNodes[0]}")
+
     path = {}
-    n = (node, "u", 2)
+    n = pathNodes.pop(0)[0]
     while n:
         node, dir, s = n
         path[node] = dir
         n = cameFrom[n]
-    # 3 (12, 12) u 2 101
     m.printPath(path)
+
+
+def part2():
+    print()
+    print("Part 2")
+
+    m = Map(HEATLOSS_MAP_TEXT, 4, 10)
+
+    cameFrom, costSoFar = m.doDijkstra2()
+    # print(cameFrom)
+    # print()
+    # print(costSoFar)
 
     node = m.get(m.maxX() - 1, m.maxY() - 1)
+    pathNodes = []
+    for k, v in costSoFar.items():
+        n, d, s = k
+        if n.x == node.x and n.y == node.y and s >= 3:
+            pathNodes.append(((node, d, s), v))
+
+    pathNodes.sort(key=lambda x: x[-1])
+    print(pathNodes)
+
+    print(f"Min heat loss path is {pathNodes[0]}")
 
     path = {}
-    n = (node, "l", 0)
+    n = pathNodes.pop(0)[0]
     while n:
         node, dir, s = n
         path[node] = dir
         n = cameFrom[n]
-    # 3 (12, 12) l 0 102
     m.printPath(path)
 
-    # prevNodes, shortestPath = m.doDijkstra()
-
-    # path = []
-    # node = nodes[m.get(12, 12)]
-    # while node:
-    #     path.append(node)
-    #     # print(node)
-    #     node = nodes.get(node)
-
-    # path.reverse()
-    # print(" -> ".join([str(n) for n in path]))
-
-    # print(nodes)
-    # print(shortestPath)
-    # for dir in "lu":
-    #     print(f"{dir}, {shortestPath[(m.get(m.maxX() - 1, m.maxY() - 1), dir)]}")
-    # # print(m.graph)
-    # for k, v in m.graph.items():
-    #     print(k, v)
+    # wrong: 1136 too high, 1113
 
 
 def main():
     part1()
+
+    part2()
 
 
 main()
