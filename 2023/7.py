@@ -1,4 +1,4 @@
-from loadFile import read_file
+from helpers.loadFile import read_file
 from functools import cmp_to_key
 
 CARD_RANKS = {

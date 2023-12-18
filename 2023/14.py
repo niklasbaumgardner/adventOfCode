@@ -1,4 +1,4 @@
-from loadFile import read_file
+from helpers.loadFile import read_file
 from functools import reduce
 
 LAYOUT_TEXT = read_file("./2023/14.txt")

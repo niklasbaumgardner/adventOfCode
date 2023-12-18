@@ -1,4 +1,4 @@
-from loadFile import read_file
+from helpers.loadFile import read_file
 
 HASH_TEXT = read_file("./2023/15.txt")
 

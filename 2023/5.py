@@ -1,4 +1,4 @@
-from loadFile import read_file
+from helpers.loadFile import read_file
 import re
 
 MAP_TEXT = read_file("./2023/5.txt")

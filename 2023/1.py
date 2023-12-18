@@ -1,4 +1,4 @@
-from loadFile import read_file
+from helpers.loadFile import read_file
 import re
 
 FILE_INPUT = read_file("./2023/1.txt")

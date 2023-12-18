@@ -1,4 +1,4 @@
-from loadFile import read_file
+from helpers.loadFile import read_file
 import sys
 
 # import queue
