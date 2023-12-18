@@ -1,4 +1,4 @@
-from helpers.loadFile import read_file
+from loadFile import read_file
 
 
 MATRIX_TEXT = read_file("./2023/10.txt")

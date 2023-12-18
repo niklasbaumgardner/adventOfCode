@@ -1,4 +1,4 @@
-from helpers.loadFile import read_file
+from loadFile import read_file
 import re
 
 CARDS_TEXT = read_file("./2023/4.txt")

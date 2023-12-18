@@ -1,4 +1,4 @@
-from helpers.loadFile import read_file
+from loadFile import read_file
 import math
 
 INSTRUCTIONS = read_file("./2023/18.txt")

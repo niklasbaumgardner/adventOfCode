@@ -1,4 +1,4 @@
-from helpers.loadFile import read_file
+from loadFile import read_file
 import numpy as np
 
 # from functools import cache

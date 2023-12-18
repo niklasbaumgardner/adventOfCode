@@ -1,4 +1,4 @@
-from helpers.loadFile import read_file
+from loadFile import read_file
 import re
 import sys
 from functools import cache
