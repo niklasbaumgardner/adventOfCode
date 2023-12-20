@@ -1,7 +1,6 @@
 from pathlib import Path
 from loadFile import read_file
 from copy import deepcopy
-import intervaltree
 
 PATH = Path(__file__)
 DATA = read_file(f"./2023/{PATH.name.split('.')[0]}.txt")
@@ -175,14 +174,6 @@ def findAcceptedRuleSets(ruleSets):
                 newPossibles[rule.var][0] = rule.val + 1
             else:
                 newPossibles[rule.var][1] = rule.val - 1
-            # newPossibles = newPossiblesList[i]
-            # if rule.var == "R":
-            #     for j in range(i, len(newPossiblesList)):
-            #         if rule.func == greaterThan:
-            #             newPossiblesList[j][rule.var][0] = rule.val + 1
-            #         else:
-            #             newPossiblesList[j][rule.var][1] = rule.val + 1
-            # else:
             for j in range(i + 1, len(newPossiblesList)):
                 if rule.func == lessThan:
                     newPossiblesList[j][rule.var][0] = rule.val
