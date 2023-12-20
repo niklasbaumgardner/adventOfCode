@@ -1,8 +1,12 @@
 from pathlib import Path
 from loadFile import read_file
+from copy import deepcopy
+import intervaltree
 
 PATH = Path(__file__)
 DATA = read_file(f"./2023/{PATH.name.split('.')[0]}.txt")
+
+POSSIBLES = {"x": [1, 4000], "m": [1, 4000], "a": [1, 4000], "s": [1, 4000]}
 
 
 def lessThan(a, b):
@@ -151,37 +155,69 @@ def distinctCombinationsBrute(ruleSets):
 
 def findAcceptedRuleSets(ruleSets):
     rulesThatAccept = []
-    for ruleName, ruleSet in ruleSets.items():
-        if ruleSet.default == "A":
-            rulesThatAccept.append(ruleSet)
-            continue
 
-        for rule in ruleSet.rules:
-            if rule.next == "A":
-                rulesThatAccept.append(ruleSet)
-                continue
+    toCheck = []
+    toCheck.append(("in", deepcopy(POSSIBLES)))
+    while toCheck:
+        ruleName, possibles = toCheck.pop(0)
 
-    for rs in rulesThatAccept:
-        if rs.default == "A":
-            # go backwards to "in" excluding rules
-            pass
+        ruleSet = ruleSets[ruleName]
 
-        for r in rs.rules:
-            if r.next == "A":
-                # go backwards to "in"
-                print(f"{r.var}: (1, 4000)", end="")
-            elif r.next == "A":
-                if r.func == greaterThan:
-                    print(f"{r.var}: ({r.val}, 4000)", end="")
+        newPossiblesList = []
+        for i in range(len(ruleSet.rules) + 1):
+            newPossiblesList.append(deepcopy(possibles))
+        # print(
+        #     newPossiblesList, len(newPossiblesList), ruleSet.rules, len(ruleSet.rules)
+        # )
+        for i, rule in enumerate(ruleSet.rules):
+            newPossibles = newPossiblesList[i]
+            if rule.func == greaterThan:
+                newPossibles[rule.var][0] = rule.val + 1
+            else:
+                newPossibles[rule.var][1] = rule.val - 1
+            # newPossibles = newPossiblesList[i]
+            # if rule.var == "R":
+            #     for j in range(i, len(newPossiblesList)):
+            #         if rule.func == greaterThan:
+            #             newPossiblesList[j][rule.var][0] = rule.val + 1
+            #         else:
+            #             newPossiblesList[j][rule.var][1] = rule.val + 1
+            # else:
+            for j in range(i + 1, len(newPossiblesList)):
+                if rule.func == lessThan:
+                    newPossiblesList[j][rule.var][0] = rule.val
                 else:
-                    print(f"{r.var}: (1, {r.val})", end="")
-            elif rs.default == "A":
-                for i in "xmas":
-                    if i != r.var:
-                        print(f"{i}: (1, 4000)", end="")
-        print()
-        print()
-        # print(rs)
+                    newPossiblesList[j][rule.var][1] = rule.val
+
+            if rule.next == "A":
+                rulesThatAccept.append(newPossiblesList[i])
+            elif rule.next != "R":
+                toCheck.append((rule.next, newPossiblesList[i]))
+
+        if ruleSet.default == "A":
+            rulesThatAccept.append(newPossiblesList[-1])
+        elif ruleSet.default != "R":
+            toCheck.append((ruleSet.default, newPossiblesList[-1]))
+
+    for r in rulesThatAccept:
+        print(r)
+
+    total = 0
+    for i in range(len(rulesThatAccept)):
+        temp = 1
+        temp *= 1 + rulesThatAccept[i]["x"][1] - rulesThatAccept[i]["x"][0]
+        temp *= 1 + rulesThatAccept[i]["m"][1] - rulesThatAccept[i]["m"][0]
+        temp *= 1 + rulesThatAccept[i]["a"][1] - rulesThatAccept[i]["a"][0]
+        temp *= 1 + rulesThatAccept[i]["s"][1] - rulesThatAccept[i]["s"][0]
+
+        total += temp
+
+    print(total)
+    print(167409079868000)
+    print(total - 167409079868000)
+
+    print()
+    return total
 
 
 def part1():
@@ -207,11 +243,11 @@ def part2():
 
     ruleSets, parts = parse()
 
-    findAcceptedRuleSets(ruleSets)
+    total = findAcceptedRuleSets(ruleSets)
 
     # distinctCombinations = distinctCombinationsBrute(ruleSets)
 
-    print(f"The number of distinct combinations is {0}")
+    print(f"The number of distinct combinations is {total}")
 
 
 def main():
