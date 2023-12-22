@@ -108,17 +108,23 @@ def canSettleBricks(layer1, layer2, nodes):
         print("not any numbers")
         return True
 
-    for nodeInt in np.unique(layer2):
-        if nodeInt == 0:
-            continue
+    # layer3 = layer1 + layer2
+    # set(unique non zeros in, count) np.unique(layer1, return_counts=True)
+    # check diff between set(layer3) and set(layer2)
+    # return number of non zero diffs
+    # do i care about layer1 ?
 
-        node = nodes[nodeInt]
-        x, y = node.point1.x, node.point1.y
-        p3 = node.point2 - node.point1
+    # for nodeInt in np.unique(layer2):
+    #     if nodeInt == 0:
+    #         continue
 
-        if p3.x == p3.y == layer1[x, y] == 0:
-            print("equal to zero")
-            return True
+    #     node = nodes[nodeInt]
+    #     x, y = node.point1.x, node.point1.y
+    #     p3 = node.point2 - node.point1
+
+    #     if p3.x == p3.y == layer1[x, y] == 0:
+    #         print("equal to zero")
+    #         return True
 
     return False
 
