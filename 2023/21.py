@@ -300,13 +300,13 @@ def part2():
     print(grid.at(Point(-1, -1)), grid.at(Point(-2, -2)))
 
     print(grid.startPoint)
-    STEPS = 50
+    STEPS = 333
     lst = []
     for i in range(1, STEPS + 1):
         currentNodes = grid.takeStep()
         lst.append(currentNodes)
-        # print(f"Step {i}: {len(currentNodes[i])}")
-        print(f"Step {i}: {len(currentNodes[i])}, {currentNodes[i]}")
+        print(f"Step {i}: {len(currentNodes[i])}")
+        # print(f"Step {i}: {len(currentNodes[i])}, {currentNodes[i]}")
 
     print(grid.currentStepNodes[2], grid.currentStepNodes[3])
     print(grid.currentStepNodes[2].union(grid.currentStepNodes[3]))
@@ -320,8 +320,29 @@ def part2():
             print(f"Step {k}: {len(v)}, {len(v) - len(grid.currentStepNodes[k - 2])}")
         else:
             print(f"Step {k}: {len(v)}")
-    print(lst)
+    # print(lst)
 
+    print(grid.size)
+    size = grid.size[0]
+
+    print((size // 2), (size // 2) + size, (size // 2) + (2 * size))
+    l1 = len(grid.currentStepNodes[size // 2])
+    l2 = len(grid.currentStepNodes[size // 2 + size])
+    l3 = len(grid.currentStepNodes[size // 2 + 2 * size])
+
+    a = (l3 - (2 * l2) + l1) // 2
+    b = l2 - l1 - a
+    c = l1
+
+    f = lambda n: a * n**2 + b * n + c
+
+    t = (26501365 - size // 2) // size
+
+    # 5 16 27
+    # 65 196 327
+    # 93684864250 too low
+
+    print(f(t))
     # total = 0
     # for k, v in grid.currentStepNodes[STEPS].items():
     #     print(k, v)
