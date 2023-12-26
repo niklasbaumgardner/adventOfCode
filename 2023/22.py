@@ -108,23 +108,32 @@ def canSettleBricks(layer1, layer2, nodes):
         print("not any numbers")
         return True
 
-    # layer3 = layer1 + layer2
+    layer3 = layer1 + layer2
+    unique2, count2 = np.unique(layer2, return_counts=True)
+    unique3, count3 = np.unique(layer3, return_counts=True)
+
+    set2 = set([(u, count2[i]) for i, u in enumerate(unique2)])
+    set3 = set([(u, count3[i]) for i, u in enumerate(unique3)])
+
+    print(set2)
+    print(set3)
+
+    for tup in set2:
+        u, c = tup
+        if u == 0:
+            continue
+
+        if tup in set3:
+            # brick is not suported anymore
+            print(f"{tup} brick is not supported so it will fall now")
+            return True
+
+    return False
+
     # set(unique non zeros in, count) np.unique(layer1, return_counts=True)
     # check diff between set(layer3) and set(layer2)
     # return number of non zero diffs
     # do i care about layer1 ?
-
-    # for nodeInt in np.unique(layer2):
-    #     if nodeInt == 0:
-    #         continue
-
-    #     node = nodes[nodeInt]
-    #     x, y = node.point1.x, node.point1.y
-    #     p3 = node.point2 - node.point1
-
-    #     if p3.x == p3.y == layer1[x, y] == 0:
-    #         print("equal to zero")
-    #         return True
 
     return False
 
@@ -133,6 +142,7 @@ class Grid:
     def __init__(self, string):
         self.string = string
         self.parse()
+        print(self)
         self.settleBricks()
 
     def __str__(self):
@@ -216,18 +226,51 @@ class Grid:
                     maxZ -= 1
                     continue
 
-                for nodeInt in np.unique(layer2):
-                    if nodeInt == 0:
+                layer3 = layer1 + layer2
+                unique2, count2 = np.unique(layer2, return_counts=True)
+                unique3, count3 = np.unique(layer3, return_counts=True)
+
+                set2 = set([(u, count2[i]) for i, u in enumerate(unique2)])
+                set3 = set([(u, count3[i]) for i, u in enumerate(unique3)])
+
+                print(set2)
+                print(set3)
+                print()
+
+                for tup in set2:
+                    u, c = tup
+                    if u == 0.0:
                         continue
 
-                    node = self.nodes[nodeInt]
-                    x, y = node.point1.x, node.point1.y
-                    p3 = node.point2 - node.point1
+                    if tup in set3:
+                        n = self.nodes[u]
+                        p1 = n.point1
+                        p2 = n.point2
+                        print(f"swapping {u} from {z+1} to {z}")
 
-                    if p3.x == p3.y == layer1[x, y] == 0:
-                        self.matrix[x, y, z] = nodeInt
-                        self.matrix[x, y, z + 1] = 0.0
+                        subL1 = self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z]
+                        if np.any(subL1):
+                            continue
+
+                        subL2 = self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1]
+                        print(subL2.shape)
+
+                        zerosLayer = np.zeros(subL2.shape)
+                        fallingLayer = np.full(subL2.shape, u)
+
+                        self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z] = fallingLayer
+                        self.matrix[
+                            p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1
+                        ] = zerosLayer
+                        # (
+                        #     self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z],
+                        #     self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1],
+                        # ) = (
+                        #     self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1],
+                        #     self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z],
+                        # )
                         bricksSettled = True
+
                 z += 1
 
             # print()
@@ -254,6 +297,7 @@ class Grid:
                     print(node, z, z + 1)
                     print()
                     continue
+
                 tempLayer = deepcopy(layer1)
                 tempLayer[
                     node.point1.x : node.point2.x + 1,
@@ -274,7 +318,7 @@ class Grid:
                     # check more here
                     # fix me
                     if not canSettleBricks(tempLayer, layer2, self.nodes):
-                        print("adding to count")
+                        print("can remove, adding to count")
                         count += 1
                     # thing = False
                     # for x in range(node.point1.x, node.point2.x + 1):
@@ -300,12 +344,16 @@ def part1():
     print(grid.matrix.shape)
     print(grid)
     numBricks = grid.findBricksToDisintegrate()
+    print()
+    print(grid)
     # 1547 too high
     # 1543 too high
     # 324 wrong
     # 1306 wrong
     # 563 wrong
     # 1243 wrong
+    # 87 wrong
+    # 453 wrong
     print(f"The number of bricks that can be disintegrated is {numBricks}")
 
 
