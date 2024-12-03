@@ -9,10 +9,9 @@ DATA = read_file(f"./2023/{PATH.name.split('.')[0]}.txt")
 
 
 class Point:
-    def __init__(self, x, y, z):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.z = z
 
     @property
     def x(self):
@@ -34,25 +33,15 @@ class Point:
             y = int(y)
         self._y = y
 
-    @property
-    def z(self):
-        return self._z
-
-    @z.setter
-    def z(self, z):
-        if type(z) == str:
-            z = int(z)
-        self._z = z
-
     def __eq__(self, other):
-        return self.x == other.x and self.y == other.y and self.z == other.z
+        return self.x == other.x and self.y == other.y
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __gt__(self, other):
-        return math.sqrt(self.x**2 + self.y**2 + self.z**2) > math.sqrt(
-            other.x**2 + other.y**2 + other.z**2
+        return math.sqrt(self.x**2 + self.y**2) > math.sqrt(
+            other.x**2 + other.y**2
         )
 
     def __ge__(self, other):
@@ -65,25 +54,24 @@ class Point:
         return self.__eq__(other) or self.__lt__(other)
 
     def __str__(self):
-        return f"({self.x}, {self.y}, {self.z})"
+        return f"({self.x}, {self.y})"
 
     def __repr__(self):
         return str(self)
 
     def __add__(self, other):
-        return Point(self.x + other.x, self.y + other.y, self.z + other.z)
+        return Point(self.x + other.x, self.y + other.y)
 
     def __sub__(self, other):
-        return Point(self.x - other.x, self.y - other.y, self.z - other.z)
+        return Point(self.x - other.x, self.y - other.y)
 
     def __hash__(self):
-        return hash((self.x, self.y, self.z))
+        return hash((self.x, self.y))
 
     def distanceTo(self, other):
         xSquared = (other.x - self.x) ** 2
         ySquared = (other.y - self.y) ** 2
-        zSquared = (other.z - self.z) ** 2
-        return math.sqrt(xSquared + ySquared + zSquared)
+        return math.sqrt(xSquared + ySquared)
 
 
 class Node:
@@ -100,12 +88,14 @@ class Node:
     def __hash__(self):
         return hash(self.point1)
 
+    def overlaps(self, other):
+        return max(self.point1.x, other.point1.x) <= min(
+            self.point2.x, other.point2.x
+        ) and max(self.point1.y, other.point1.y) <= min(self.point2.y, other.point2.y)
+
 
 def canSettleBricks(layer1, layer2, nodes):
-    # print(layer1)
-    # print(layer2)
     if not np.any(layer1 * layer2):
-        print("not any numbers")
         return True
 
     layer3 = layer1 + layer2
@@ -115,18 +105,28 @@ def canSettleBricks(layer1, layer2, nodes):
     set2 = set([(u, count2[i]) for i, u in enumerate(unique2)])
     set3 = set([(u, count3[i]) for i, u in enumerate(unique3)])
 
-    print(set2)
-    print(set3)
+    # print(set2)
+    # print(set3)
 
     for tup in set2:
         u, c = tup
         if u == 0:
             continue
 
-        if tup in set3:
-            # brick is not suported anymore
-            print(f"{tup} brick is not supported so it will fall now")
-            return True
+        if tup not in set3:
+            continue
+
+        n = nodes[u]
+        p1 = n.point1
+        p2 = n.point2
+
+        subLayer1 = layer1[p1.x : p2.x + 1, p1.y : p2.y + 1]
+        if np.any(subLayer1):
+            continue
+
+        # brick is not suported anymore
+        print(f"{tup} brick is not supported so it will fall now")
+        return True
 
     return False
 
@@ -135,15 +135,16 @@ def canSettleBricks(layer1, layer2, nodes):
     # return number of non zero diffs
     # do i care about layer1 ?
 
-    return False
-
 
 class Grid:
     def __init__(self, string):
         self.string = string
+        self.supports = {}
+        self.supportedBy = {}
         self.parse()
-        print(self)
+        # print(self)
         self.settleBricks()
+        self.createSupportMaps()
 
     def __str__(self):
         return str(self.matrix)
@@ -169,7 +170,7 @@ class Grid:
 
         self.nodes = {}
 
-        print((maxX + 1, maxY + 1, maxZ + 1))
+        # print((maxX + 1, maxY + 1, maxZ + 1))
         # print(coords)
         self.matrix = np.zeros((maxX + 1, maxY + 1, maxZ + 1))
         for i, coord in enumerate(coords):
@@ -177,16 +178,9 @@ class Grid:
             x1, y1, z1 = c1
             x2, y2, z2 = c2
 
-            # if x1 > x2 or y1 > y2 or z1 > z2:
-            #     print("HERE", c1, c2)
-
-            p1 = Point(x1, y1, z1)
-            p2 = Point(x2, y2, z2)
+            p1 = Point(x1, y1)
+            p2 = Point(x2, y2)
             node = Node(p1, p2)
-
-            # p3 = p2 - p1
-            # if len(np.unique([p3.x, p3.y, p3.z])) > 2:
-            #     print("HERE", c1, c2)
 
             self.nodes[i + 1] = node
 
@@ -200,152 +194,305 @@ class Grid:
                 self.matrix[x1, y1, z1] = i + 1
 
     def settleBricks(self):
-        z = self.matrix.shape[2] - 1
-        while z > 0:
-            layer = self.matrix[:, :, z]
-            if not layer.any():
-                self.matrix = np.delete(self.matrix, z, 2)
-            z -= 1
-
         bricksSettled = True
         while bricksSettled:
             bricksSettled = False
-            print("here")
+
             z = 1
-            maxZ = self.matrix.shape[2] - 2
-            while z <= maxZ:
-                layer1 = self.matrix[:, :, z]
-                layer2 = self.matrix[:, :, z + 1]
-                # print(layer1)
-                # print(layer2)
-                if not np.any(layer1 * layer2):
+            maxZ = self.matrix.shape[2] - 1
+            while z < maxZ:
+                layer1 = deepcopy(self.matrix[:, :, z])
+                layer2 = deepcopy(self.matrix[:, :, z + 1])
+
+                mulLayer = layer1 * layer2
+
+                if not np.any(mulLayer):
+                    # we can settle this layer
+                    # print(layer1)
+                    # print(layer2)
                     bricksSettled = True
-                    layer3 = layer1 + layer2
+                    newLayer = layer1 + layer2
                     self.matrix = np.delete(self.matrix, z + 1, 2)
-                    self.matrix[:, :, z] = layer3
+                    self.matrix[:, :, z] = newLayer
                     maxZ -= 1
-                    continue
 
-                layer3 = layer1 + layer2
-                unique2, count2 = np.unique(layer2, return_counts=True)
-                unique3, count3 = np.unique(layer3, return_counts=True)
+                else:
+                    # print(layer1)
+                    # print(layer2)
+                    # we still might be able to settle some bricks on this layer
+                    layer3 = layer1 + layer2
+                    unique2, count2 = np.unique(layer2, return_counts=True)
+                    unique3, count3 = np.unique(layer3, return_counts=True)
 
-                set2 = set([(u, count2[i]) for i, u in enumerate(unique2)])
-                set3 = set([(u, count3[i]) for i, u in enumerate(unique3)])
+                    set2 = set([(u, count2[i]) for i, u in enumerate(unique2)])
+                    set3 = set([(u, count3[i]) for i, u in enumerate(unique3)])
 
-                print(set2)
-                print(set3)
-                print()
+                    for tup in set2:
+                        u, c = tup
+                        if u == 0.0:
+                            continue
 
-                for tup in set2:
-                    u, c = tup
-                    if u == 0.0:
-                        continue
+                        if tup not in set3:
+                            continue
 
-                    if tup in set3:
                         n = self.nodes[u]
                         p1 = n.point1
                         p2 = n.point2
-                        print(f"swapping {u} from {z+1} to {z}")
 
-                        subL1 = self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z]
-                        if np.any(subL1):
+                        subLayer1 = self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z]
+                        if np.any(subLayer1):
                             continue
 
-                        subL2 = self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1]
-                        print(subL2.shape)
+                        # print(f"swapping {u} from {z+1} to {z}")
 
-                        zerosLayer = np.zeros(subL2.shape)
-                        fallingLayer = np.full(subL2.shape, u)
+                        subLayer2 = deepcopy(
+                            self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1]
+                        )
+
+                        zerosLayer = np.zeros(subLayer2.shape)
+                        fallingLayer = np.full(subLayer2.shape, u)
+
+                        # print(subLayer1, fallingLayer)
+                        # print(subLayer2, zerosLayer)
 
                         self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z] = fallingLayer
                         self.matrix[
                             p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1
                         ] = zerosLayer
-                        # (
-                        #     self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z],
-                        #     self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1],
-                        # ) = (
-                        #     self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1],
-                        #     self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z],
-                        # )
                         bricksSettled = True
-
+                        continue
                 z += 1
 
-            # print()
-        # print(self.matrix)
+    # def findBricksToDisintegrate(self):
+    #     count = 0
+    #     for z in range(1, self.matrix.shape[2] - 1):
+    #         layer1 = deepcopy(self.matrix[:, :, z])
+    #         layer2 = deepcopy(self.matrix[:, :, z + 1])
+
+    #         for nodeInt in np.unique(layer1):
+    #             if nodeInt == 0:
+    #                 continue
+
+    #             node = self.nodes[nodeInt]
+    #             if (
+    #                 self.matrix[node.point1.x, node.point1.y, z]
+    #                 == self.matrix[node.point1.x, node.point1.y, z + 1]
+    #             ):
+    #                 # print(nodeInt)
+    #                 # print(layer1)
+    #                 # print(layer2)
+    #                 # print(node, z, z + 1)
+    #                 # print()
+    #                 continue
+
+    #             tempLayer = deepcopy(layer1)
+    #             tempLayer[
+    #                 node.point1.x : node.point2.x + 1,
+    #                 node.point1.y : node.point2.y + 1,
+    #             ] = np.zeros(
+    #                 (
+    #                     1 + node.point2.x - node.point1.x,
+    #                     1 + node.point2.y - node.point1.y,
+    #                 )
+    #             )
+    #             # print(nodeInt)
+    #             # print(layer1)
+    #             # print(tempLayer)
+    #             # print(layer2)
+    #             # print(tempLayer * layer2)
+
+    #             # if np.any(tempLayer * layer2):
+    #             # check more here
+    #             # fix me
+    #             if not canSettleBricks(tempLayer, layer2, self.nodes):
+    #                 print("can remove, adding to count")
+    #                 count += 1
+
+    #             # print()
+    #     # print(np.count_nonzero(np.unique(self.matrix[:, :, -1])), self.matrix[:, :, -1])
+    #     count += np.count_nonzero(np.unique(self.matrix[:, :, -1]))
+    #     return count
+
+
+class Tower:
+    def __init__(self, string):
+        self.string = string
+        self.supports = {}
+        self.supportedBy = {}
+        self.parse()
+        # print(self)
+        self.settleBricks()
+        self.createSupportMaps()
+
+    def parse(self):
+        coords = []
+        maxX = 0
+        maxY = 0
+        maxZ = 0
+        for line in self.string.split("\n"):
+            c1, c2 = line.split("~")
+            x1, y1, z1 = list(map(int, c1.split(",")))
+            x2, y2, z2 = list(map(int, c2.split(",")))
+
+            maxX = max(maxX, x1, x2)
+            maxY = max(maxY, y1, y2)
+            maxZ = max(maxZ, z1, z2)
+
+            coords.append(((x1, y1, z1), (x2, y2, z2)))
+
+        self.nodes = {}
+
+        # print((maxX + 1, maxY + 1, maxZ + 1))
+        # print(coords)
+        self.matrix = [np.zeros((maxX + 1, maxY + 1)) for _ in range(maxZ + 1)]
+        for i, coord in enumerate(coords):
+            c1, c2 = coord
+            x1, y1, z1 = c1
+            x2, y2, z2 = c2
+
+            p1 = Point(x1, y1)
+            p2 = Point(x2, y2)
+            node = Node(p1, p2)
+
+            self.nodeList.append(node)
+
+            self.nodes[i + 1] = node
+
+            if x2 - x1 != 0:
+                self.matrix[z1][x1 : x2 + 1, y1] = i + 1
+            elif y2 - y1 != 0:
+                self.matrix[z1][x1, y1 : y2 + 1] = i + 1
+            elif z2 - z1 != 0:
+                for z in range(z1, z2 + 1):
+                    self.matrix[z][x1, y1] = i + 1
+            else:
+                self.matrix[z1][x1, y1] = i + 1
+
+    def __str__(self):
+        string = ""
+        for a in reversed(self.matrix):
+            string += str(a) + "\n"
+        return string
+
+    def __repr__(self):
+        return str(self)
+
+    def settleBricks(self):
+        bricksSettled = True
+        while bricksSettled:
+            bricksSettled = False
+
+            z = 1
+            maxZ = len(self.matrix) - 1
+            while z < maxZ:
+                layer1 = deepcopy(self.matrix[z])
+                layer2 = deepcopy(self.matrix[z + 1])
+
+                mulLayer = layer1 * layer2
+
+                if not np.any(mulLayer):
+                    # we can settle this layer
+                    # print(layer1)
+                    # print(layer2)
+                    bricksSettled = True
+                    newLayer = layer1 + layer2
+                    self.matrix = self.matrix[:z] + [newLayer] + self.matrix[z + 2 :]
+                    maxZ -= 1
+                    continue
+
+                else:
+                    # print(layer1)
+                    # print(layer2)
+                    # we still might be able to settle some bricks on this layer
+                    unique2, count2 = np.unique(layer2, return_counts=True)
+
+                    set2 = set([(u, count2[i]) for i, u in enumerate(unique2)])
+
+                    for tup in set2:
+                        u, c = tup
+                        if u == 0.0:
+                            continue
+
+                        n = self.nodes[u]
+                        p1 = n.point1
+                        p2 = n.point2
+
+                        subLayer1 = layer1[p1.x : p2.x + 1, p1.y : p2.y + 1]
+                        if np.any(subLayer1):
+                            continue
+
+                        # print(f"swapping {u} from {z+1} to {z}")
+
+                        subLayer2 = deepcopy(layer2[p1.x : p2.x + 1, p1.y : p2.y + 1])
+
+                        zerosLayer = np.zeros(subLayer2.shape)
+                        fallingLayer = np.full(subLayer2.shape, u)
+
+                        # print(subLayer1, fallingLayer)
+                        # print(subLayer2, zerosLayer)
+
+                        self.matrix[z][p1.x : p2.x + 1, p1.y : p2.y + 1] = fallingLayer
+                        self.matrix[z + 1][
+                            p1.x : p2.x + 1, p1.y : p2.y + 1
+                        ] = zerosLayer
+                        bricksSettled = True
+                z += 1
 
     def findBricksToDisintegrate(self):
-        count = 0
-        for z in range(1, self.matrix.shape[2] - 1):
-            layer1 = self.matrix[:, :, z]
-            layer2 = self.matrix[:, :, z + 1]
+        bricksThatCanBeRemoved = []
+        for nodeInt, supportedBy in self.supportedBy.items():
+            if len(supportedBy) > 1:
+                bricksThatCanBeRemoved.append(nodeInt)
+        for nodeInt, supports in self.supports.items():
+            if not supports:
+                bricksThatCanBeRemoved.append(nodeInt)
 
-            for nodeInt in np.unique(layer1):
+        # print(bricksThatCanBeRemoved)
+        return len(bricksThatCanBeRemoved)
+
+    def createSupportMaps(self):
+        for nI in self.nodes.keys():
+            self.supports[nI] = set()
+            self.supportedBy[nI] = set()
+
+        zLength = len(self.matrix)
+        for z in range(2, zLength):
+            layer = self.matrix[z]
+
+            for nodeInt in np.unique(layer):
                 if nodeInt == 0:
                     continue
 
                 node = self.nodes[nodeInt]
                 if (
-                    self.matrix[node.point1.x, node.point1.y, z]
-                    == self.matrix[node.point1.x, node.point1.y, z + 1]
+                    self.matrix[z][node.point1.x, node.point1.y]
+                    == self.matrix[z - 1][node.point1.x, node.point1.y]
                 ):
-                    print(nodeInt)
-                    print(layer1)
-                    print(layer2)
-                    print(node, z, z + 1)
-                    print()
                     continue
 
-                tempLayer = deepcopy(layer1)
-                tempLayer[
-                    node.point1.x : node.point2.x + 1,
-                    node.point1.y : node.point2.y + 1,
-                ] = np.zeros(
-                    (
-                        1 + node.point2.x - node.point1.x,
-                        1 + node.point2.y - node.point1.y,
-                    )
-                )
-                print(nodeInt)
-                print(layer1)
-                print(tempLayer)
-                print(layer2)
-                print(tempLayer * layer2)
+                for x in range(node.point1.x, node.point2.x + 1):
+                    for y in range(node.point1.y, node.point2.y + 1):
+                        supportInt = self.matrix[z - 1][x, y]
+                        if supportInt == 0.0:
+                            continue
 
-                if np.any(tempLayer * layer2):
-                    # check more here
-                    # fix me
-                    if not canSettleBricks(tempLayer, layer2, self.nodes):
-                        print("can remove, adding to count")
-                        count += 1
-                    # thing = False
-                    # for x in range(node.point1.x, node.point2.x + 1):
-                    #     for y in range(node.point1.y, node.point2.y + 1):
-                    #         if layer2[x, y] != 0.0:
-                    #             thing = True
-                    #             break
-                    #     if thing:
-                    #         break
-                    # if thing:
-                    #     print("adding to count")
-                    #     count += 1
+                        self.supports[supportInt].add(nodeInt)
+                        self.supportedBy[nodeInt].add(supportInt)
 
-                print()
-        # print(np.count_nonzero(np.unique(self.matrix[:, :, -1])), self.matrix[:, :, -1])
-        count += np.count_nonzero(np.unique(self.matrix[:, :, -1]))
-        return count
+        print(self.supports)
+        print(self.supportedBy)
+        print(len(self.supportedBy), len(self.supports))
 
 
 def part1():
     print("Part 1")
-    grid = Grid(DATA)
-    print(grid.matrix.shape)
+    grid = Tower(DATA)
+    # print(grid.matrix.shape)
     print(grid)
     numBricks = grid.findBricksToDisintegrate()
+
     print()
-    print(grid)
+    # print(grid)
     # 1547 too high
     # 1543 too high
     # 324 wrong
@@ -354,6 +501,10 @@ def part1():
     # 1243 wrong
     # 87 wrong
     # 453 wrong
+    # 873 wrong
+    # 474 wrong
+    # 480 wrong
+    # 483 wrong
     print(f"The number of bricks that can be disintegrated is {numBricks}")
 
 
