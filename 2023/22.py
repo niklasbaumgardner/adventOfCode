@@ -40,9 +40,7 @@ class Point:
         return not self.__eq__(other)
 
     def __gt__(self, other):
-        return math.sqrt(self.x**2 + self.y**2) > math.sqrt(
-            other.x**2 + other.y**2
-        )
+        return math.sqrt(self.x**2 + self.y**2) > math.sqrt(other.x**2 + other.y**2)
 
     def __ge__(self, other):
         return self.__eq__(other) or self.__gt__(other)
@@ -162,9 +160,9 @@ class Grid:
             x1, y1, z1 = list(map(int, c1.split(",")))
             x2, y2, z2 = list(map(int, c2.split(",")))
 
-            maxX = max(maxX, x1, x2)
-            maxY = max(maxY, y1, y2)
-            maxZ = max(maxZ, z1, z2)
+            maxX = max(maxX, x1, x2, maxX)
+            maxY = max(maxY, y1, y2, maxY)
+            maxZ = max(maxZ, z1, z2, maxZ)
 
             coords.append(((x1, y1, z1), (x2, y2, z2)))
 
@@ -256,9 +254,9 @@ class Grid:
                         # print(subLayer2, zerosLayer)
 
                         self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z] = fallingLayer
-                        self.matrix[
-                            p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1
-                        ] = zerosLayer
+                        self.matrix[p1.x : p2.x + 1, p1.y : p2.y + 1, z + 1] = (
+                            zerosLayer
+                        )
                         bricksSettled = True
                         continue
                 z += 1
@@ -505,6 +503,7 @@ def part1():
     # 474 wrong
     # 480 wrong
     # 483 wrong
+    # 250 wrong
     print(f"The number of bricks that can be disintegrated is {numBricks}")
 
 
