@@ -1,5 +1,5 @@
 from pathlib import Path
-from loadFile import read_file, parse_to_matrix, Matrix
+from helpers import read_file, parse_to_matrix, Matrix
 
 
 class MatrixExtended(Matrix):

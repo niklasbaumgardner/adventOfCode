@@ -1,5 +1,5 @@
 from pathlib import Path
-from loadFile import read_file
+from helpers import read_file
 
 
 PATH = Path(__file__)
