@@ -118,3 +118,18 @@ class Matrix:
             return None
 
         return self.matrix[y][x]
+
+
+class LinkedNode:
+    def __init__(self, value, next=None):
+        self.value = value
+        self.next = next
+
+    def __str__(self):
+        if self.next is not None:
+            return f"{self.value} -> {self.next}"
+
+        return f"{self.value}"
+
+    def __repr__(self):
+        return self.__str__()
