@@ -34,7 +34,7 @@ class Grid:
     def __init__(self, data):
         self.string = data
         self.parse()
-        self.settle_bricks()
+        # self.settle_bricks()
 
     def __str__(self):
         string = ""
@@ -61,7 +61,7 @@ class Grid:
 
             coords.append(((x1, y1, z1), (x2, y2, z2)))
 
-        self.nodes = {}
+        # self.nodes = []
 
         self.grid = [np.zeros((max_x + 1, max_y + 1)) for _ in range(max_z + 1)]
 
@@ -74,7 +74,8 @@ class Grid:
             p2 = Point(x2, y2)
             node = Brick(p1, p2)
 
-            self.nodes[i + 1] = node
+            # self.nodes[i + 1] = node
+            # self.nodes.append(i + 1)
 
             if x2 - x1 != 0:
                 self.grid[z1][x1 : x2 + 1, y1] = i + 1
@@ -186,8 +187,15 @@ class Grid:
         # print()
 
     def create_support_maps(self):
+        self.nodes = set(np.unique(self.grid))
+        self.nodes.remove(np.float64(0.0))
+
         self.brick_supports = dict()
         self.brick_supported_by = dict()
+
+        for num in self.nodes:
+            self.brick_supports[num] = set()
+            self.brick_supported_by[num] = set()
 
         for z in range(len(self.grid) - 1):
             layer1 = self.grid[z]
@@ -196,7 +204,11 @@ class Grid:
             for r, row in enumerate(layer2):
                 for c, supported_brick in enumerate(row):
                     support_brick = layer1[r][c]
-                    if supported_brick > 0 and support_brick > 0:
+                    if (
+                        supported_brick > 0
+                        and support_brick > 0
+                        and support_brick != supported_brick
+                    ):
                         # print(support_brick, supported_brick)
                         if support_brick in self.brick_supports:
                             self.brick_supports[support_brick].add(supported_brick)
@@ -210,35 +222,101 @@ class Grid:
                                 [support_brick]
                             )
 
-        last_layer = self.grid[-1]
-        for r, row in enumerate(last_layer):
-            for c, brick in enumerate(row):
-                self.brick_supports[brick] = set()
+        # last_layer = self.grid[-1]
+        # for r, row in enumerate(last_layer):
+        #     for c, brick in enumerate(row):
+        #         if brick > 0:
+        #             print("DID WE GET HERE????", self.brick_supports[brick])
+        #             self.brick_supports[brick] = set()
 
         # print(self.brick_supports)
         # print(self.brick_supported_by)
+        # print()
 
     def find_bricks_that_can_be_removed(self):
         self.create_support_maps()
+        # print()
 
         bricks_that_can_be_removed = set()
 
-        for brick, support_bricks in self.brick_supported_by.items():
-            if len(support_bricks) > 1:
+        for brick, supported_bricks in self.brick_supports.items():
+            # print(brick, supported_bricks)
+            can_be_rmeoved = True
+            for s_brick in supported_bricks:
+                if len(self.brick_supported_by[s_brick]) < 2:
+                    can_be_rmeoved = False
+
+            if can_be_rmeoved:
+                # print(f"adding {brick}")
                 bricks_that_can_be_removed.add(brick)
 
         for brick, supported_bricks in self.brick_supports.items():
             if not len(supported_bricks):
                 bricks_that_can_be_removed.add(brick)
 
+        # print(bricks_that_can_be_removed)
         return len(bricks_that_can_be_removed)
+
+    def find_chain_reactions(self):
+        self.create_support_maps()
+
+        # print(self.brick_supports)
+        # print(self.brick_supported_by)
+
+        first_layer = self.grid[0]
+        floor_bricks = set()
+        for row in first_layer:
+            for brick in row:
+                if brick > 0:
+                    floor_bricks.add(brick)
+
+        # print(floor_bricks)
+
+        count = 0
+
+        for k in self.brick_supports.keys():
+            copied_supported_by = deepcopy(self.brick_supported_by)
+            # del copied_supported_by[k]
+            deleted_brick = k
+
+            # print(k)
+            for brick, supports in self.brick_supported_by.items():
+                # print(brick, supports)
+                if deleted_brick in supports:
+                    copied_supported_by[brick].remove(deleted_brick)
+                else:
+                    for s_brick in supports:
+
+                        if not len(copied_supported_by[s_brick]) and len(
+                            self.brick_supported_by[s_brick]
+                        ):
+                            copied_supported_by[brick].remove(s_brick)
+
+            # print("start")
+            # print(self.brick_supported_by)
+            # for k, v in self.brick_supported_by.items():
+            #     print(k, v)
+            # print()
+            for k, v in copied_supported_by.items():
+                # print(k, v)
+                if k not in floor_bricks and len(v) == 0:
+                    count += 1
+            # print("end")
+            # print()
+
+        return count
 
 
 def part1():
     grid = Grid(DATA)
 
     # print(grid)
+    grid.settle_bricks()
     # print()
+    # print("Settled:")
+    # print(grid)
+
+    # print(grid.brick_supports[grid.nodes[0]])
     # print()
     # print()
     # print()
@@ -247,12 +325,18 @@ def part1():
 
 
 def part2():
-    return
+    grid = Grid(DATA)
+    grid.settle_bricks()
+    # print(grid)
+    # 1966 too low
+    count = grid.find_chain_reactions()
+    return count
 
 
 def main():
-    print(f"Part 1: {part1()}")
+    print(f"Part 1: {part1()}")  # 471
     print(f"Part 2: {part2()}")
+    # 1966 too low
 
 
 main()

@@ -504,6 +504,7 @@ def part1():
     # 480 wrong
     # 483 wrong
     # 250 wrong
+    # 111 wrong
     print(f"The number of bricks that can be disintegrated is {numBricks}")
 
 
