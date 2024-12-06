@@ -260,6 +260,12 @@ class Grid:
     def find_chain_reactions(self):
         self.create_support_maps()
 
+        for k, v in self.brick_supports.items():
+            print(k, v)
+        print()
+        for k, v in self.brick_supported_by.items():
+            print(k, v)
+        print()
         # print(self.brick_supports)
         # print(self.brick_supported_by)
 
@@ -273,13 +279,21 @@ class Grid:
         # print(floor_bricks)
 
         count = 0
+        prev_count = 0
 
-        for k in self.brick_supports.keys():
+        temp = []
+        for fb in floor_bricks:
+            temp.append(fb)
+
+        while len(temp):
             copied_supported_by = deepcopy(self.brick_supported_by)
             # del copied_supported_by[k]
-            deleted_brick = k
+            deleted_brick = temp.pop(0)
+            for b in self.brick_supports[deleted_brick]:
+                if b not in temp:
+                    temp.append(b)
 
-            # print(k)
+            print(deleted_brick, temp)
             for brick, supports in self.brick_supported_by.items():
                 # print(brick, supports)
                 if deleted_brick in supports:
@@ -294,15 +308,20 @@ class Grid:
 
             # print("start")
             # print(self.brick_supported_by)
-            # for k, v in self.brick_supported_by.items():
-            #     print(k, v)
+            # for key, v in self.brick_supported_by.items():
+            #     print(key, v)
             # print()
-            for k, v in copied_supported_by.items():
+            for key, v in copied_supported_by.items():
                 # print(k, v)
-                if k not in floor_bricks and len(v) == 0:
+                if key not in floor_bricks and len(v) == 0:
+                    print(key, v, self.brick_supported_by[key], count)
                     count += 1
             # print("end")
             # print()
+            print(
+                f"brick {deleted_brick} would cause {count - prev_count} bricks to fall"
+            )
+            prev_count = count
 
         return count
 
@@ -327,10 +346,18 @@ def part1():
 def part2():
     grid = Grid(DATA)
     grid.settle_bricks()
-    # print(grid)
+    print(grid)
     # 1966 too low
     count = grid.find_chain_reactions()
     return count
+
+
+# 1 -> 2
+# 2 -> 1
+# 3 -> 0
+# 4 -> 2
+# 5 -> 1
+# 6 -> 0
 
 
 def main():
