@@ -260,12 +260,12 @@ class Grid:
     def find_chain_reactions(self):
         self.create_support_maps()
 
-        for k, v in self.brick_supports.items():
-            print(k, v)
-        print()
-        for k, v in self.brick_supported_by.items():
-            print(k, v)
-        print()
+        # for k, v in self.brick_supports.items():
+        #     print(k, v)
+        # print()
+        # for k, v in self.brick_supported_by.items():
+        #     print(k, v)
+        # print()
         # print(self.brick_supports)
         # print(self.brick_supported_by)
 
@@ -292,18 +292,38 @@ class Grid:
             for b in self.brick_supports[deleted_brick]:
                 if b not in temp:
                     temp.append(b)
+            # for b in self.brick_supported_by[deleted_brick]:
+            #     if b not in temp:
+            #         temp.append(b)
 
-            print(deleted_brick, temp)
-            for brick, supports in self.brick_supported_by.items():
+            # print("checking brick:", deleted_brick)
+            bricks_to_check = [b for b in self.brick_supports[deleted_brick]]
+
+            while len(bricks_to_check):
+                brick = bricks_to_check.pop(0)
+                supports = self.brick_supported_by[brick]
+
+                for b in self.brick_supports[brick]:
+                    if b not in bricks_to_check:
+                        bricks_to_check.append(b)
+
                 # print(brick, supports)
                 if deleted_brick in supports:
                     copied_supported_by[brick].remove(deleted_brick)
                 else:
                     for s_brick in supports:
-
-                        if not len(copied_supported_by[s_brick]) and len(
-                            self.brick_supported_by[s_brick]
+                        # print(
+                        #     "here",
+                        #     s_brick,
+                        #     copied_supported_by[s_brick],
+                        #     self.brick_supported_by[s_brick],
+                        # )
+                        if (
+                            not len(copied_supported_by[s_brick])
+                            and len(self.brick_supported_by[s_brick])
+                            and s_brick in copied_supported_by[brick]
                         ):
+                            # print("removing", s_brick, "from copied supported_by")
                             copied_supported_by[brick].remove(s_brick)
 
             # print("start")
@@ -314,13 +334,14 @@ class Grid:
             for key, v in copied_supported_by.items():
                 # print(k, v)
                 if key not in floor_bricks and len(v) == 0:
-                    print(key, v, self.brick_supported_by[key], count)
+                    # print(key, v, self.brick_supported_by[key], count)
                     count += 1
             # print("end")
             # print()
-            print(
-                f"brick {deleted_brick} would cause {count - prev_count} bricks to fall"
-            )
+            # print(
+            #     f"brick {deleted_brick} would cause {count - prev_count} bricks to fall"
+            # )
+            # print()
             prev_count = count
 
         return count
@@ -346,8 +367,9 @@ def part1():
 def part2():
     grid = Grid(DATA)
     grid.settle_bricks()
-    print(grid)
+    # print(grid)
     # 1966 too low
+    # 69052 too high
     count = grid.find_chain_reactions()
     return count
 
