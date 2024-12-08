@@ -69,7 +69,7 @@ class Point:
     def __hash__(self):
         return hash((self.x, self.y))
 
-    def distanceTo(self, other):
+    def distance_to(self, other):
         xSquared = (other.x - self.x) ** 2
         ySquared = (other.y - self.y) ** 2
         return math.sqrt(xSquared + ySquared)
@@ -80,6 +80,15 @@ class Node:
         self.value = value
         self.point = Point(x, y)
 
+    def __str__(self):
+        return f"{self.value} at {self.point}"
+
+    def __repr__(self):
+        return str(self)
+
+    def __hash__(self):
+        return hash(self.point)
+
 
 class Matrix:
     def __init__(self, data):
@@ -87,7 +96,14 @@ class Matrix:
         self.parse()
 
     def __str__(self):
-        return self.string
+        # return self.string
+        string = ""
+        for row in self.matrix:
+            row_string = ""
+            for node in row:
+                row_string += str(node)
+            string += row_string + "\n"
+        return string
 
     def __repr__(self):
         return self.__str__()
@@ -109,6 +125,9 @@ class Matrix:
     @property
     def num_rows(self):
         return len(self.matrix)
+
+    def at_point(self, point):
+        return self.at(point.x, point.y)
 
     def at(self, x, y):
         if not (-1 < x < self.num_cols):
