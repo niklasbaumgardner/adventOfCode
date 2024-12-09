@@ -122,32 +122,40 @@ class PathMatrix(Matrix):
             x = None
             y = None
             # find top right
+            # print(nodes_sorted_x)
+            # print(nodes_sorted_y)
             if ((nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1) and (
                 (nodes_sorted_y[2].point.y - nodes_sorted_y[1].point.y) == 1
             ):
+                # print("top right")
                 x = nodes_sorted_x[2].point.x + 1
                 y = nodes_sorted_y[0].point.y + 1
 
             # find bottom right
-            if ((nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1) and (
+            elif ((nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1) and (
                 (nodes_sorted_y[1].point.y - nodes_sorted_y[0].point.y) == 1
             ):
+                # print("bottom right")
                 x = nodes_sorted_x[2].point.x - 1
                 y = nodes_sorted_y[2].point.y + 1
 
             # find bottom left
-            if ((nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1) and (
+            elif ((nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1) and (
                 (nodes_sorted_y[1].point.y - nodes_sorted_y[0].point.y) == 1
             ):
+                # print("bottom left")
                 x = nodes_sorted_x[0].point.x - 1
                 y = nodes_sorted_y[2].point.y - 1
 
             # find top left
-            if ((nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1) and (
+            elif ((nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1) and (
                 (nodes_sorted_y[2].point.y - nodes_sorted_y[1].point.y) == 1
             ):
+                # print("top left")
                 x = nodes_sorted_x[0].point.x + 1
                 y = nodes_sorted_y[0].point.y - 1
+
+            # print(x, y)
 
             if x is None or y is None:
                 continue
@@ -245,15 +253,25 @@ def part2():
     #     print(o, o.point)
 
     looping_points, looping_points_tuple = matrix.make_rectangles()
+    looping_points_list = list(looping_points)
     # print(looping_points)
+    no_dupes = [
+        p for i, p in enumerate(looping_points_list) if p not in looping_points_list[:i]
+    ]
+
+    dupes = [
+        p for i, p in enumerate(looping_points_list) if p in looping_points_list[:i]
+    ]
+    print(dupes)
 
     # print(matrix.is_rectangle([Point(4, 0), Point(9, 1), Point(8, 7), Point(3, 6)]))
     # print(matrix.is_rectangle([Point(2, 3), Point(1, 6), Point(7, 4), Point(6, 7)]))
     # print(matrix.is_rectangle([Point(4, 4), Point(4, 0), Point(0, 4), Point(0, 0)]))
 
     # 4935 too high
+    # 4717 too high
 
-    return len(looping_points), len(looping_points_tuple)
+    return len(looping_points), len(looping_points_tuple), len(no_dupes)
 
 
 def main():
