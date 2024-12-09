@@ -21,8 +21,7 @@ class PathMatrix(Matrix):
 
     def mark_visited(self, node):
         try:
-            if self.visited_nodes:
-                return self.visited_nodes
+            self.visited_nodes
         except:
             self.visited_nodes = set()
 
@@ -67,7 +66,6 @@ class PathMatrix(Matrix):
 
     def step_until_edge(self):
         node = self.at_point(self.guard.point)
-        print(node)
         while node:
             node = self.step()
 
@@ -96,129 +94,117 @@ class PathMatrix(Matrix):
 
         return self.obstacles
 
-    # def make_node(self, left_node, right_node, top_node, bottom_node):
-    #     if
-
-    def get_counts(self, nodes_dict):
-        counts = {}
-        for k, n in nodes_dict.items():
-            if n in counts:
-                counts[n]["edge"].append(k)
-                counts[n]["count"] += 1
-            else:
-                counts[n] = {"edge": [k], "count": 1}
-        return counts
-
-    def is_rectangle(self, points):
-        sorted_points = sorted(points, key=lambda p: p.x)
-        sorted_points = sorted(sorted_points, key=lambda p: p.y)
-        print("HERTERERE", sorted_points)
-
-        #####################################
-        p1, p2, p3, p4 = sorted_points
-        cx = (p1.x + p2.x + p3.x + p4.x) / 4
-        cy = (p1.y + p2.y + p3.y + p4.y) / 4
-
-        print(cx, cy)
-        center = Point(cx, cy)
-        print(center)
-
-        print(
-            p1.distance_to(center),
-            p2.distance_to(center),
-            p3.distance_to(center),
-            p4.distance_to(center),
-        )
-        return p1.distance_to(center) == p3.distance_to(center) and p2.distance_to(
-            center
-        ) == p4.distance_to(center)
-
     def make_rectangles(self):
         self.find_obstacles()
 
+        looping_obstacles = set()
         seen = set()
 
-        for n1 in self.obstacles:
+        print(f"0%. {len(self.obstacles)} obstacles")
+        for i, n1 in enumerate(self.obstacles):
             for n2 in self.obstacles:
                 for n3 in self.obstacles:
 
-                    temp = tuple([n1, n2, n3])
+                    temp = [n1, n2, n3]
+                    nodes_sorted_x = sorted(temp, key=lambda n: n.point.x)
+                    nodes_sorted_y = sorted(temp, key=lambda n: n.point.y)
+                    temp = tuple(nodes_sorted_x)
                     if n1 == n2 or n1 == n3 or n2 == n3 or temp in seen:
                         continue
 
-                    xs = set()
-                    for x in [n1.point.x, n2.point.x, n3.point.x]:
-                        for diff in [-1, 0, 1]:
-                            if x + diff < 0:
-                                continue
-                            xs.add(x + diff)
+                    x = None
+                    y = None
+                    # find top right
+                    if (
+                        (nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1
+                    ) and (
+                        (nodes_sorted_y[2].point.y - nodes_sorted_y[1].point.y) == 1
+                    ):
+                        x = nodes_sorted_x[2].point.x + 1
+                        y = nodes_sorted_y[0].point.y + 1
 
-                    ys = set()
-                    for y in [n1.point.y, n2.point.y, n3.point.y]:
-                        for diff in [-1, 0, 1]:
-                            if y + diff < 0:
-                                continue
-                            ys.add(y + diff)
+                    # find bottom right
+                    if (
+                        (nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1
+                    ) and (
+                        (nodes_sorted_y[1].point.y - nodes_sorted_y[0].point.y) == 1
+                    ):
+                        x = nodes_sorted_x[2].point.x - 1
+                        y = nodes_sorted_y[2].point.y + 1
 
-                    potential_points = []
-                    for x in xs:
-                        for y in ys:
-                            p = Point(x, y)
-                            potential_points.append(p)
+                    # find bottom left
+                    if (
+                        (nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1
+                    ) and (
+                        (nodes_sorted_y[1].point.y - nodes_sorted_y[0].point.y) == 1
+                    ):
+                        x = nodes_sorted_x[0].point.x - 1
+                        y = nodes_sorted_y[2].point.y - 1
 
-                    print(potential_points)
+                    # find top left
+                    if (
+                        (nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1
+                    ) and (
+                        (nodes_sorted_y[2].point.y - nodes_sorted_y[1].point.y) == 1
+                    ):
+                        x = nodes_sorted_x[0].point.x + 1
+                        y = nodes_sorted_y[0].point.y - 1
 
-                    # for
+                    if x is None or y is None:
+                        continue
 
-                    #####################################################
+                    node = self.at(x, y)
+                    if node is None or self.guard == node or node.value == "#":
+                        continue
 
-                    print(n1.point, n2.point, n3.point)
-                    left_edge = min(n1.point.x, n2.point.x, n3.point.x)
-                    right_edge = max(n1.point.x, n2.point.x, n3.point.x)
-                    top_edge = min(n1.point.y, n2.point.y, n3.point.y)
-                    bottom_edge = max(n1.point.y, n2.point.y, n3.point.y)
+                    # print("we got square?")
+                    # print(n1.point, n2.point, n3.point)
+                    # print(x, y)
+                    # print()
+                    pp = Point(x, y)
 
-                    # print(left_edge, right_edge, top_edge, bottom_edge)
+                    if pp == self.guard.point:
+                        continue
 
-                    # top_left = Node("#", left_edge, top_edge)
-                    # top_right = Node("#", right_edge, top_edge)
-                    # bottom_right = Node("#", right_edge, bottom_edge)
-                    # bottom_left = Node("#", left_edge, bottom_edge)
-                    # test = set()
-                    # for n in [
-                    #     top_left,
-                    #     top_right,
-                    #     bottom_right,
-                    #     bottom_left,
-                    #     n1,
-                    #     n2,
-                    #     n3,
-                    # ]:
-                    #     test.add(tuple([n.point.x, n.point.y]))
+                    points = [n.point for n in nodes_sorted_x] + [pp]
 
-                    # print(test, len(test))
-                    nodes = [n1, n2, n3]
-                    left_node = find_node(left_edge, "x", nodes)
-                    right_node = find_node(right_edge, "x", nodes)
-                    top_node = find_node(top_edge, "y", nodes)
-                    bottom_node = find_node(bottom_edge, "y", nodes)
+                    points_sorted = sorted(points, key=lambda p: p.y)
+                    points_sorted = sorted(points_sorted, key=lambda p: p.x)
+                    # print(points_sorted)
+                    # print()
 
-                    counts = self.get_counts(
-                        {
-                            "left": left_node,
-                            "right": right_node,
-                            "top": top_node,
-                            "bottom": bottom_node,
-                        }
-                    )
-                    print(counts)
-                    print()
+                    if self.check_path(points_sorted):
+                        looping_obstacles.add(pp)
 
                     seen.add(temp)
-                    if len(seen) > 20:
-                        return
+            print(f"{round(100 * (i + 1) / len(self.obstacles), 2)}%")
 
-                # find position for each node
+        return looping_obstacles
+
+    def check_path(self, points_sorted):
+        bottom_left, top_left, bottom_right, top_right = points_sorted
+
+        # top and bottom line
+        for x in range(top_left.x, top_right.x):
+            top_node = self.at(x, top_right.y)
+            if top_node.value == "#":
+                return False
+
+            bottom_node = self.at(x, bottom_left.y)
+            if bottom_node.value == "#":
+                return False
+
+        # right and left line
+        for y in range(top_right.y, bottom_right.y):
+            right_node = self.at(bottom_right.x, y)
+            if right_node.value == "#":
+                return False
+
+            left_node = self.at(top_left.x, y)
+            if left_node.value == "#":
+                return False
+
+        return True
 
 
 def find_node(edge, xOrY, nodes):
@@ -236,17 +222,18 @@ def part1():
     matrix.find_gaurd_node()
     # print(matrix)
     # print(matrix.find_gaurd_node())
-    print(matrix)
+    print(matrix.guard)
+    # print(matrix)
 
     matrix.step_until_edge()
-    print(matrix)
+    # print(matrix)
 
     return len(matrix.get_visited_nodes())
 
 
 def part2():
     matrix = PathMatrix(DATA)
-    # matrix.find_gaurd_node()
+    matrix.find_gaurd_node()
     # # print(matrix)
     # # print(matrix.find_gaurd_node())
     # print(matrix)
@@ -255,13 +242,16 @@ def part2():
     # for o in obstacles:
     #     print(o, o.point)
 
-    # matrix.make_rectangles()
+    looping_points = matrix.make_rectangles()
+    # print(looping_points)
 
-    print(matrix.is_rectangle([Point(4, 0), Point(9, 1), Point(8, 7), Point(3, 6)]))
-    print(matrix.is_rectangle([Point(2, 3), Point(1, 6), Point(7, 4), Point(6, 7)]))
-    print(matrix.is_rectangle([Point(4, 4), Point(4, 0), Point(0, 4), Point(0, 0)]))
+    # print(matrix.is_rectangle([Point(4, 0), Point(9, 1), Point(8, 7), Point(3, 6)]))
+    # print(matrix.is_rectangle([Point(2, 3), Point(1, 6), Point(7, 4), Point(6, 7)]))
+    # print(matrix.is_rectangle([Point(4, 4), Point(4, 0), Point(0, 4), Point(0, 0)]))
 
-    return
+    # 4935 too high
+
+    return len(looping_points)
 
 
 def main():

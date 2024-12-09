@@ -67,7 +67,7 @@ class Point:
         return Point(self.x - other.x, self.y - other.y)
 
     def __hash__(self):
-        return hash((self.x, self.y))
+        return hash(tuple([self.x, self.y]))
 
     def distance_to(self, other):
         xSquared = (other.x - self.x) ** 2
