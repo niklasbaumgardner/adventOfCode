@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from helpers import read_file, Node, Matrix, Point
 from copy import deepcopy
+from itertools import combinations
 
 
 PATH = Path(__file__)
@@ -98,88 +99,89 @@ class PathMatrix(Matrix):
         self.find_obstacles()
 
         looping_obstacles = set()
+        looping_obstacles_tuple = set()
         seen = set()
 
         print(f"0%. {len(self.obstacles)} obstacles")
-        for i, n1 in enumerate(self.obstacles):
-            for n2 in self.obstacles:
-                for n3 in self.obstacles:
+        coms = combinations(self.obstacles, 3)
+        print(f"0%. {len(self.obstacles)**3} combinations")
+        for i, n in enumerate(coms):
 
-                    temp = [n1, n2, n3]
-                    nodes_sorted_x = sorted(temp, key=lambda n: n.point.x)
-                    nodes_sorted_y = sorted(temp, key=lambda n: n.point.y)
-                    temp = tuple(nodes_sorted_x)
-                    if n1 == n2 or n1 == n3 or n2 == n3 or temp in seen:
-                        continue
+            # for i, n1 in enumerate(self.obstacles):
+            #     for n2 in self.obstacles:
+            #         for n3 in self.obstacles:
+            n1, n2, n3 = n
 
-                    x = None
-                    y = None
-                    # find top right
-                    if (
-                        (nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1
-                    ) and (
-                        (nodes_sorted_y[2].point.y - nodes_sorted_y[1].point.y) == 1
-                    ):
-                        x = nodes_sorted_x[2].point.x + 1
-                        y = nodes_sorted_y[0].point.y + 1
+            temp = [n1, n2, n3]
+            nodes_sorted_x = sorted(temp, key=lambda n: n.point.x)
+            nodes_sorted_y = sorted(temp, key=lambda n: n.point.y)
+            temp = tuple(nodes_sorted_x)
+            if n1 == n2 or n1 == n3 or n2 == n3 or temp in seen:
+                continue
 
-                    # find bottom right
-                    if (
-                        (nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1
-                    ) and (
-                        (nodes_sorted_y[1].point.y - nodes_sorted_y[0].point.y) == 1
-                    ):
-                        x = nodes_sorted_x[2].point.x - 1
-                        y = nodes_sorted_y[2].point.y + 1
+            x = None
+            y = None
+            # find top right
+            if ((nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1) and (
+                (nodes_sorted_y[2].point.y - nodes_sorted_y[1].point.y) == 1
+            ):
+                x = nodes_sorted_x[2].point.x + 1
+                y = nodes_sorted_y[0].point.y + 1
 
-                    # find bottom left
-                    if (
-                        (nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1
-                    ) and (
-                        (nodes_sorted_y[1].point.y - nodes_sorted_y[0].point.y) == 1
-                    ):
-                        x = nodes_sorted_x[0].point.x - 1
-                        y = nodes_sorted_y[2].point.y - 1
+            # find bottom right
+            if ((nodes_sorted_x[1].point.x - nodes_sorted_x[0].point.x) == 1) and (
+                (nodes_sorted_y[1].point.y - nodes_sorted_y[0].point.y) == 1
+            ):
+                x = nodes_sorted_x[2].point.x - 1
+                y = nodes_sorted_y[2].point.y + 1
 
-                    # find top left
-                    if (
-                        (nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1
-                    ) and (
-                        (nodes_sorted_y[2].point.y - nodes_sorted_y[1].point.y) == 1
-                    ):
-                        x = nodes_sorted_x[0].point.x + 1
-                        y = nodes_sorted_y[0].point.y - 1
+            # find bottom left
+            if ((nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1) and (
+                (nodes_sorted_y[1].point.y - nodes_sorted_y[0].point.y) == 1
+            ):
+                x = nodes_sorted_x[0].point.x - 1
+                y = nodes_sorted_y[2].point.y - 1
 
-                    if x is None or y is None:
-                        continue
+            # find top left
+            if ((nodes_sorted_x[2].point.x - nodes_sorted_x[1].point.x) == 1) and (
+                (nodes_sorted_y[2].point.y - nodes_sorted_y[1].point.y) == 1
+            ):
+                x = nodes_sorted_x[0].point.x + 1
+                y = nodes_sorted_y[0].point.y - 1
 
-                    node = self.at(x, y)
-                    if node is None or self.guard == node or node.value == "#":
-                        continue
+            if x is None or y is None:
+                continue
 
-                    # print("we got square?")
-                    # print(n1.point, n2.point, n3.point)
-                    # print(x, y)
-                    # print()
-                    pp = Point(x, y)
+            node = self.at(x, y)
+            if node is None or self.guard.point == node.point or node.value == "#":
+                continue
 
-                    if pp == self.guard.point:
-                        continue
+            # print("we got square?")
+            # print(n1.point, n2.point, n3.point)
+            # print(x, y)
+            # print()
+            pp = Point(x, y)
 
-                    points = [n.point for n in nodes_sorted_x] + [pp]
+            if pp == self.guard.point:
+                continue
 
-                    points_sorted = sorted(points, key=lambda p: p.y)
-                    points_sorted = sorted(points_sorted, key=lambda p: p.x)
-                    # print(points_sorted)
-                    # print()
+            points = [n.point for n in nodes_sorted_x] + [pp]
 
-                    if self.check_path(points_sorted):
-                        looping_obstacles.add(pp)
+            points_sorted = sorted(points, key=lambda p: p.y)
+            points_sorted = sorted(points_sorted, key=lambda p: p.x)
+            # print(points_sorted)
+            # print()
 
-                    seen.add(temp)
-            print(f"{round(100 * (i + 1) / len(self.obstacles), 2)}%")
+            if self.check_path(points_sorted):
+                looping_obstacles.add(pp)
+                looping_obstacles_tuple.add(tuple([pp.x, pp.y]))
 
-        return looping_obstacles
+            # # seen.add(temp)
+            # percent = round(100 * (i + 1) / (len(self.obstacles) ** 3), 2)
+            # if percent > 1 and (int(percent) % 10) == 0:
+            #     print(f"{round(100 * (i + 1) / (len(self.obstacles)**3), 2)}%")
+
+        return looping_obstacles, looping_obstacles_tuple
 
     def check_path(self, points_sorted):
         bottom_left, top_left, bottom_right, top_right = points_sorted
@@ -242,7 +244,7 @@ def part2():
     # for o in obstacles:
     #     print(o, o.point)
 
-    looping_points = matrix.make_rectangles()
+    looping_points, looping_points_tuple = matrix.make_rectangles()
     # print(looping_points)
 
     # print(matrix.is_rectangle([Point(4, 0), Point(9, 1), Point(8, 7), Point(3, 6)]))
@@ -251,7 +253,7 @@ def part2():
 
     # 4935 too high
 
-    return len(looping_points)
+    return len(looping_points), len(looping_points_tuple)
 
 
 def main():
