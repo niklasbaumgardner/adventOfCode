@@ -74,6 +74,12 @@ class Point:
         ySquared = (other.y - self.y) ** 2
         return math.sqrt(xSquared + ySquared)
 
+    def __add__(self, other):
+        return Point(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Point(self.x - other.x, self.y - other.y)
+
 
 class Node:
     def __init__(self, value, x, y):
@@ -83,11 +89,20 @@ class Node:
     def __str__(self):
         return f"{self.value} at {self.point}"
 
+    # def __str__(self):
+    #     return f"{self.value}"
+
     def __repr__(self):
         return str(self)
 
     def __hash__(self):
         return hash(self.point)
+
+    def __eq__(self, other):
+        return self.value == other.value and self.point == other.point
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 class Matrix:
