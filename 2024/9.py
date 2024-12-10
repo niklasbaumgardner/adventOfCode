@@ -73,66 +73,46 @@ class FileSystem:
 
         return chunk
 
-    def get_biggest_id_not_seen(self):
-        for id, length in self.ids:
-            if id not in self.ids_seen:
-                return id
+    def get_first_chunk_before(self, length, index):
+        chunk = []
+        for i, val in enumerate(self.system[:index]):
+            if val == ".":
+                chunk.append(i)
+                if len(chunk) >= length:
+                    return chunk
 
-        return None
+            elif val != ".":
+                if len(chunk) >= length:
+                    return chunk
+                else:
+                    chunk = []
+
+        return []
 
     def index_all(self, id):
         return [i for i, val in enumerate(self.system) if val == id]
 
     def remove_freespace_by_chunk(self):
-        ids_swapped = set()
 
-        chunk = self.first_chunk_of_freespace()
-        first_chunk_index = chunk[0]
+        for id, length in self.ids:
+            id_indexes = self.index_all(id)
+            if len(id_indexes) != length:
+                print(len(id_indexes), length)
 
-        id = self.get_biggest_id_not_seen()
-        id_indexes = self.index_all(id)
-        first_id_index = id_indexes[0]
-
-        # print(chunk, id, id_indexes)
-        while first_chunk_index < first_id_index:
-            self.ids_seen.add(id)
-            print(id)
-
-            if len(id_indexes) <= len(chunk):
-                for i, system_i in enumerate(id_indexes):
-                    self.system[system_i], self.system[chunk[i]] = (
-                        self.system[chunk[i]],
-                        self.system[system_i],
-                    )
-
-                ids_swapped.add(id)
-
-                print(self.ids_seen)
-                self.ids_seen = set(
-                    [id for id, length in self.ids if id in ids_swapped]
-                )
-                print(self.ids_seen)
-            else:
-                if len(self.ids_seen) == len(self.ids):
-                    self.ids_seen = set(
-                        [id for id, length in self.ids if id in ids_swapped]
-                    )
-                    # print(self.ids_seen)
-                id = self.get_biggest_id_not_seen()
-                id_indexes = self.index_all(id)
-                first_id_index = id_indexes[0]
+            chunk = self.get_first_chunk_before(length, id_indexes[0])
+            if len(chunk) == 0:
                 continue
 
-            chunk = self.first_chunk_of_freespace()
-            first_chunk_index = chunk[0]
+            # print(id, id_indexes, chunk)
 
-            id = self.get_biggest_id_not_seen()
-            id_indexes = self.index_all(id)
-            first_id_index = id_indexes[0]
+            for i, system_i in enumerate(id_indexes):
+                self.system[system_i], self.system[chunk[i]] = (
+                    self.system[chunk[i]],
+                    self.system[system_i],
+                )
 
-            print(id, first_chunk_index, first_id_index)
-
-        #     pass
+            # print(self.system)
+            # print()
 
 
 def part1():
@@ -145,16 +125,22 @@ def part1():
 
 def part2():
     fs = FileSystem(DATA)
-    print(fs.system)
+    # print(fs.system)
     # print(fs.ids)
     # print(fs.first_chunk_of_freespace())
     fs.remove_freespace_by_chunk()
-    print(fs.system)
+    # print(fs.system)
+
+    # 6460170597310 too high
+    # 6460170597310
+    # 6570501590468 too high
+    # 6460170593016
+
     return fs.checksum()
 
 
 def main():
-    print(f"Part 1: {part1()}")
+    # print(f"Part 1: {part1()}")
     print(f"Part 2: {part2()}")
 
 
