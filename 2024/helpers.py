@@ -86,11 +86,11 @@ class Node:
         self.value = value
         self.point = Point(x, y)
 
-    def __str__(self):
-        return f"{self.value} at {self.point}"
-
     # def __str__(self):
-    #     return f"{self.value}"
+    #     return f"{self.value} at {self.point}"
+
+    def __str__(self):
+        return f"{self.value}"
 
     def __repr__(self):
         return str(self)
