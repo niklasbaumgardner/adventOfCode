@@ -135,22 +135,26 @@ class PathMatrix(Matrix):
             for node in row:
                 if node.point == self.guard.point or node.value != ".":
                     continue
-                print(node, node.point)
+                # print(node)
 
                 orig_value = deepcopy(node.value)
                 node.value = "#"
 
-                print(node, node.point)
+                # print(node, node.point)
 
                 orig_guard_point = deepcopy(self.guard.point)
+                orig_guard_dir = deepcopy(self.guard.value)
 
-                if self.check_for_cycle():
+                is_cycle = self.check_for_cycle()
+                # print(is_cycle)
+                if is_cycle:
                     cycle_points.add(node.point)
 
                 self.guard.point = orig_guard_point
+                self.guard.value = orig_guard_dir
 
-                print(self.guard.point)
-                print()
+                # print(self.guard.point)
+                # print()
 
                 node.value = orig_value
 
@@ -161,13 +165,20 @@ class PathMatrix(Matrix):
 
         node = self.at_point(self.guard.point)
         while node:
-            next_node = self.step_no_mark()
-            if node.point in path and path[node.point] == next_node:
-                return True
+            prev_node = node
 
-            path[node.point] = next_node
+            node = self.step_no_mark()
 
-            node = next_node
+            path_node = self.at_point(self.guard.point)
+
+            if path_node.point != prev_node.point:
+                if prev_node.point in path and path[prev_node.point] == path_node:
+                    return True
+
+                path[prev_node.point] = path_node
+
+        # print(path)
+        return False
 
 
 def find_node(edge, xOrY, nodes):
@@ -197,7 +208,7 @@ def part1():
 def part2():
     matrix = PathMatrix(DATA)
     matrix.find_gaurd_node()
-    print(matrix.guard, matrix.guard.point)
+    # print(matrix.guard, matrix.guard.point)
     # # print(matrix)
     # # print(matrix.find_gaurd_node())
     # print(matrix)
