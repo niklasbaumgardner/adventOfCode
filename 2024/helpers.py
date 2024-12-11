@@ -167,3 +167,452 @@ class LinkedNode:
 
     def __repr__(self):
         return self.__str__()
+
+
+class TreeNode:
+    __slots__ = "value", "parent", "left", "right", "height"
+
+    def __init__(self, value, parent=None, left=None, right=None):
+        """
+        Initialization of a node
+        :param value: value stored at the node
+        :param parent: the parent node
+        :param left: the left child node
+        :param right: the right child node
+        """
+        self.value = value
+        self.parent = parent
+        self.left = left
+        self.right = right
+        self.height = 0
+
+    def __eq__(self, other):
+        """
+        Determine if the two nodes are equal
+        :param other: the node being compared to
+        :return: true if the nodes are equal, false otherwise
+        """
+        if type(self) is not type(other):
+            return False
+        return self.value == other.value
+
+    def __str__(self):
+        """String representation of a node by its value"""
+        return str(self.value)
+
+    def __repr__(self):
+        """String representation of a node by its value"""
+        return str(self.value)
+
+    def is_leaf(self):
+        return self.height == 0
+
+
+class AVLTree:
+    def __init__(self):
+        # DO NOT MODIFY THIS FUNCTION #
+        """
+        Initializes an empty Binary Search Tree
+        """
+        self.root = None  # The root Node of the tree
+        self.size = 0  # The number of Nodes in the tree
+
+    def __eq__(self, other):
+        # DO NOT MODIFY THIS FUNCTION #
+        """
+        Describe equality comparison for BSTs ('==')
+        :param other: BST being compared to
+        :return: True if equal, False if not equal
+        """
+        if self.size != other.size:
+            return False
+        if self.root != other.root:
+            return False
+        if self.root is None or other.root is None:
+            return True  # Both must be None
+
+        if self.root.left is not None and other.root.left is not None:
+            r1 = self._compare(self.root.left, other.root.left)
+        else:
+            r1 = self.root.left == other.root.left
+        if self.root.right is not None and other.root.right is not None:
+            r2 = self._compare(self.root.right, other.root.right)
+        else:
+            r2 = self.root.right == other.root.right
+
+        result = r1 and r2
+        return result
+
+    def _compare(self, t1, t2):
+        # DO NOT MODIFY THIS FUNCTION #
+        """
+        Recursively compares two trees, used in __eq__.
+        :param t1: root node of first tree
+        :param t2: root node of second tree
+        :return: True if equal, False if nott
+        """
+        if t1 is None or t2 is None:
+            return t1 == t2
+        if t1 != t2:
+            return False
+        result = self._compare(t1.left, t2.left) and self._compare(t1.right, t2.right)
+        return result
+
+    def visual(self):
+        """
+        Returns a visual representation of the AVL Tree in terms of levels
+        :return: None
+        """
+        root = self.root
+        if not root:
+            print("Empty tree.")
+            return
+        bfs_queue = []
+        track = {}
+        bfs_queue.append((root, 0, root.parent))
+        h = self.height(self.root)
+        for i in range(h + 1):
+            track[i] = []
+        while bfs_queue:
+            node = bfs_queue.pop(0)
+            track[node[1]].append(node)
+            if node[0].left:
+                bfs_queue.append((node[0].left, node[1] + 1, node[0]))
+            if node[0].right:
+                bfs_queue.append((node[0].right, node[1] + 1, node[0]))
+        for i in range(h + 1):
+            print(f"Level {i}: ", end="")
+            for node in track[i]:
+                print(tuple([node[0], node[2]]), end=" ")
+            print()
+
+    ### Implement/Modify the functions below ###
+
+    def insert(self, node, value):
+        """
+        Inserts a node into the sorted spot in the tree. Rebalances if needed
+        :param node: root node
+        :param value: value to be inserted
+        :return: nothing
+        """
+        if not self.root:
+            self.root = TreeNode(value)
+            self.size += 1
+            return
+
+        else:
+            if value == node.value:
+                return
+
+            if value < node.value:
+                if node.left is None:
+                    node.left = TreeNode(value, parent=node)
+                    self.size += 1
+                else:
+                    self.insert(node.left, value)
+
+            elif value > node.value:
+                if node.right is None:
+                    node.right = TreeNode(value, parent=node)
+                    self.size += 1
+                else:
+                    self.insert(node.right, value)
+        self.rebalance(node)
+
+    def remove(self, node, value):
+        """
+        Removes the node with value value. Does nothing if value isn't found
+        :param node: root node
+        :param value: value to be removed
+        :return: root of subtree
+        """
+        if node is None:
+            return
+        new_node = node
+        found = self.search(node, value)
+        if found is None or found.value != value:
+            return
+        node = found
+        parent = node.parent
+
+        if self.size == 1 and self.root.value == value:
+            self.root = None
+            self.size = 0
+            return
+        if self.size == 2:
+            if self.root.left and self.root.value == value:
+                self.root.value = self.root.left.value
+                self.root.left = None
+                self.root.height = 0
+                self.size -= 1
+                return self.root
+            elif self.root.right and self.root.value == value:
+                self.root.value = self.root.right.value
+                self.root.right = None
+                self.root.height = 0
+                self.size -= 1
+                return self.root
+
+        if node.left is not None and node.right is not None:
+            succ = self.max(node.left)
+            self.remove(new_node, succ.value)
+            found.value = succ.value
+            return new_node
+
+        elif node == new_node:
+            if found.left is not None:
+                new_node = node.left
+            else:
+                new_node = node.right
+            if new_node:
+                new_node.parent = None
+            self.size -= 1
+            return new_node
+        elif node.left is not None:
+            self.replace_child(parent, node, node.left)
+            self.size -= 1
+        else:
+            self.replace_child(parent, node, node.right)
+            self.size -= 1
+
+        node = parent
+        while node:
+            self.rebalance(node)
+            node = node.parent
+        return node
+
+    def search(self, node, value):
+        """
+        searches the tree for node with value value
+        :param node: root node
+        :param value: value to be found
+        :return: node if found, else possible parent
+        """
+        cur = self.root
+        while cur:
+            if value == cur.value:
+                return cur
+            elif value < cur.value:
+                if cur.left is None:
+                    return cur
+                cur = cur.left
+            else:
+                if cur.right is None:
+                    return cur
+                cur = cur.right
+        return cur
+
+    def inorder(self, node):
+        """
+        Returns a generator object of the tree traversed using the inorder method of traversal starting at node
+        :param node: root node
+        :return: generator object
+        """
+        if node is None:
+            return
+        else:
+            yield from self.inorder(node.left)
+            yield node
+            yield from self.inorder(node.right)
+
+    def preorder(self, node):
+        """
+        Returns a generator object of the tree traversed using the preorder method of traversal starting at node
+        :param node: root node
+        :return: generator object
+        """
+        if node is None:
+            return
+        else:
+            yield node
+            yield from self.preorder(node.left)
+            yield from self.preorder(node.right)
+
+    def postorder(self, node):
+        """
+        Returns a generator object of the tree traversed using the postorder method of traversal starting at node
+        :param node: root node
+        :return: generator object
+        """
+        if node is None:
+            return
+        else:
+            yield from self.postorder(node.left)
+            yield from self.postorder(node.right)
+            yield node
+
+    def depth(self, value):
+        """
+        Finds depth of node with given value
+        :param value: value of depth to be found
+        :return: depth
+        """
+        node = self.root
+        dep = 0
+        while node is not None:
+            if node.value == value:
+                return dep
+            elif value < node.value:
+                node = node.left
+                dep += 1
+            elif value > node.value:
+                node = node.right
+                dep += 1
+        return -1
+
+    def height(self, node):
+        """
+        Returns height of node
+        :param node: node of height to be found
+        :return: height
+        """
+        if node is None:
+            return -1
+        return node.height
+
+    def min(self, node):
+        """
+        Finds the minimum value of the tree
+        :param node: root node
+        :return: minimum node
+        """
+        if node is None:
+            return None
+        if node.left is None:
+            return node
+        else:
+            return self.min(node.left)
+
+    def max(self, node):
+        """
+        Finds the maximum value of the tree
+        :param node: root node
+        :return: maximum node
+        """
+        if node is None:
+            return None
+        if node.right is None:
+            return node
+        else:
+            return self.max(node.right)
+
+    def get_size(self):
+        """
+        Number of nodes in the tree
+        :return: size
+        """
+        return self.size
+
+    def get_balance(self, node):
+        """
+        Finds the balance factor of the given node
+        :param node: node of balance factor to be found
+        :return: balance factor
+        """
+        if node is None:
+            return 0
+        left = -1
+        if node.left is not None:
+            left = node.left.height
+        right = -1
+        if node.right is not None:
+            right = node.right.height
+        return left - right
+
+    def left_rotate(self, root):
+        """
+        Performs an AVL left rotation of the tree
+        :param root: root node
+        :return: root of rotated tree
+        """
+        right_left = root.right.left
+        if root.parent is not None:
+            self.replace_child(root.parent, root, root.right)
+        else:
+            self.root = root.right
+            self.root.parent = None
+        self.set_child(root.right, "left", root)
+        self.set_child(root, "right", right_left)
+        self.update_height(root)
+
+    def right_rotate(self, root):
+        """
+        Performs and AVL right rotation of the tree
+        :param root: root node
+        :return: root of rotated tree
+        """
+        left_right = root.left.right
+        if root.parent is not None:
+            self.replace_child(root.parent, root, root.left)
+        else:
+            self.root = root.left
+            self.root.parent = None
+        self.set_child(root.left, "right", root)
+        self.set_child(root, "left", left_right)
+        self.update_height(root)
+
+    def rebalance(self, node):
+        """
+        Rebalances the tree at node
+        :param node: node that needs to be rebalanced
+        :return: balanced node
+        """
+        self.update_height(node)
+        if self.get_balance(node) == -2:
+            if self.get_balance(node.right) == 1:
+                self.right_rotate(node.right)
+            return self.left_rotate(node)
+        elif self.get_balance(node) == 2:
+            if self.get_balance(node.left) == -1:
+                self.left_rotate(node.left)
+            return self.right_rotate(node)
+        return node
+
+    def set_child(self, parent, which_child, child):
+        """
+        sets the node as the parents left of right
+        :param parent: parent node
+        :param which_child: left or right
+        :param child: child node
+        :return: True or false
+        """
+        if which_child != "left" and which_child != "right":
+            return False
+        if which_child == "left":
+            parent.left = child
+        else:
+            parent.right = child
+        if child is not None:
+            child.parent = parent
+        self.update_height(child)
+        return True
+
+    def replace_child(self, parent, current, new_child):
+        """
+        Replaces current node with a new value
+        :param parent: parent node
+        :param current: node to be changed
+        :param new_child: new node
+        :return: True of false
+        """
+        if parent.left == current:
+            return self.set_child(parent, "left", new_child)
+        elif parent.right == current:
+            return self.set_child(parent, "right", new_child)
+        return False
+
+    def update_height(self, node):
+        """
+        Updates the height of the node
+        :param node: node of height to be found
+        :return: nothing
+        """
+        if node is None:
+            return
+        left = -1
+        if node.left is not None:
+            left = node.left.height
+        right = -1
+        if node.right is not None:
+            right = node.right.height
+        node.height = 1 + max(right, left)
