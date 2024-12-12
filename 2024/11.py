@@ -127,29 +127,60 @@ def blink_n_times2(stones, n):
     return stones
 
 
+@cache
+def blink_2(depth, number):
+    if depth == 0:
+        # print(f"Returning from depth {current_depth}. Number: {number}")
+        return 1
+
+    if number == 0:
+        return blink_2(depth - 1, 1)
+
+    split = maybe_split_number(number)
+    if split:
+        l, r = split
+        return blink_2(depth - 1, l) + blink_2(depth - 1, r)
+
+    return blink_2(depth - 1, number * 2024)
+
+
 def part1():
-    nums = list(map(int, DATA.strip().split(" ")))
-    stones = []
-    for n in nums:
-        stones.append(Stone(n))
+    # nums = list(map(int, DATA.strip().split(" ")))
+    # stones = []
+    # for n in nums:
+    #     stones.append(Stone(n))
 
-    stones = blink_n_times(stones, 25)
+    # stones = blink_n_times(stones, 25)
 
-    # s = Stone(0)
-    # s.blink()
-    return len(stones)
+    # # s = Stone(0)
+    # # s.blink()
+    # return len(stones)
+    stones = list(map(int, DATA.strip().split(" ")))
+
+    total = 0
+    for s in stones:
+        total += blink_2(25, s)
+
+    return total
 
 
 def part2():
     stones = list(map(int, DATA.strip().split(" ")))
 
-    stones = blink_n_times2(stones, 75)
+    # stones = blink_n_times2(stones, 75)
+    total = 0
+    for s in stones:
+        # print(f"starting stone {s}")
+        total += blink_2(75, s)
+        # print(f"done with stone {s}")
 
-    return len(stones)
+    # print(total)
+
+    return total
 
 
 def main():
-    # print(f"Part 1: {part1()}")
+    print(f"Part 1: {part1()}")
     print(f"Part 2: {part2()}")
 
 
