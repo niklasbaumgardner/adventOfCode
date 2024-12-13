@@ -58,7 +58,7 @@ class Point:
         return f"({self.x}, {self.y})"
 
     def __repr__(self):
-        return str(self)
+        return self.__str__()
 
     def __add__(self, other):
         return Point(self.x + other.x, self.y + other.y)
@@ -93,7 +93,7 @@ class Node:
     #     return f"{self.value}"
 
     def __repr__(self):
-        return str(self)
+        return self.__str__()
 
     def __hash__(self):
         return hash(self.point)
@@ -616,3 +616,173 @@ class AVLTree:
         if node.right is not None:
             right = node.right.height
         node.height = 1 + max(right, left)
+
+
+class Graph:
+    """
+    Graph Class ADT
+    """
+
+    def __init__(self, iterable=None):
+        """
+        DO NOT EDIT THIS METHOD
+        Construct a random Directed Graph
+        :param size: Number of vertices
+        :param: iterable: iterable containing edges to use to construct the graph.
+        """
+        self.id_map = {}  # { vertex.ID: vertex }
+        self.size = 0
+        self.matrix = []
+        self.iterable = iterable
+        self.construct_graph()
+        if hasattr(iterable, "close"):
+            # iterable.close()
+            pass
+
+    def __eq__(self, other):
+        """
+        DO NOT EDIT THIS METHOD
+        Determines if 2 graphs are Identical
+        :param other: Graph Object
+        :return: Bool, True if Graph objects are equal
+        """
+        return (
+            self.id_map == other.id_map
+            and self.matrix == other.matrix
+            and self.size == other.size
+        )
+
+    def __str__(self):
+        """
+        function for printing graph in a visually pleasing way
+        :return: string
+        """
+        string = "     "
+        keys = []
+        for k in self.id_map:
+            string += "{0:>5s}".format(str(k))
+            keys.append(str(k))
+        string += "\n"
+        i = 0
+        for lst in self.matrix:
+            string += "{0:>5s}".format(str(keys[i]))
+            i += 1
+            for item in lst:
+                if item is None:
+                    item = "_"
+                string += "{0:>5s}".format(str(item))
+            string += "\n"
+        return string
+
+    __repr__ = __str__
+
+    def get_vertex(self, ID):
+        """
+        gets the vertex if ID is in the graph
+        :param ID: vertex ID
+        :return: vertex if found otherwise none
+        """
+        if ID in self.id_map:
+            return self.id_map[ID]
+        return None
+
+    def get_edges(self, ID):
+        """
+        gets the outgoing edges for a given ID
+        :param ID: vertex ID
+        :return: set of edges if vertex exists and has edges otherwise empty set
+        """
+        edges = set()
+        if ID in self.id_map:
+            for vertex in self.matrix[self.id_map[ID].index]:
+                if vertex is not None:
+                    edges.add(vertex)
+        return edges
+
+    def construct_graph(self):
+        """
+        creates a graph with iterable object, throws GraphError if iterable is not iterable
+        :return:
+        """
+        try:
+            for e in self.iterable:
+                s, d = e.split()
+                self.insert_edge(int(s), int(d))
+        except TypeError:
+            raise TypeError
+
+    def insert_edge(self, source, destination):
+        """
+        adds vertex edge to the graph
+        :param source: first vertex
+        :param destination: second vertex
+        :return: None
+        """
+        s_index = self.get_vertex(source)
+        if s_index is None:
+            self.id_map[source] = Vertex(source, self.size)
+            if self.size == 0:
+                self.matrix = [[None]]
+            else:
+                for lst in self.matrix:
+                    lst += [None]
+                self.matrix.append([None for i in range(self.size + 1)])
+            self.size += 1
+
+        d_index = self.get_vertex(destination)
+        if d_index is None:
+            self.id_map[destination] = Vertex(destination, self.size)
+            for lst in self.matrix:
+                lst += [None]
+            self.matrix.append([None for i in range(self.size + 1)])
+            self.size += 1
+
+        s_index = self.get_vertex(source).index
+        d_index = self.get_vertex(destination).index
+        self.matrix[s_index][d_index] = destination
+
+    def bfs(self, start, target, path=None):
+        """
+        breadth first search from starting vertex to target vertex
+        :param start: starting vertex
+        :param target: ending vertex
+        :param path: None
+        :return: path from starting vertex to target vertex
+        """
+        if self.get_vertex(start):
+            if start == target:
+                return [start]
+            q = [(start, [start])]
+            while q:
+                (vertex, path) = q.pop(0)
+                edges = self.get_edges(vertex)
+                for edge in edges:
+                    if self.id_map[edge].visited is False:
+                        if edge == target:
+                            return path + [edge]
+                        q.append((edge, path + [edge]))
+                        self.id_map[edge].visit()
+        return []
+
+    def dfs(self, start, target, path=None):
+        """
+        depth first search from starting vertex to target vertex
+        :param start: starting vertex
+        :param target: ending vertex
+        :param path: None
+        :return: path from starting vertex to target vertex
+        """
+        if self.get_vertex(start):
+            if start == target:
+                return [start]
+            q = [(start, [start])]
+            while q:
+                (vertex, path) = q.pop()
+                if self.id_map[vertex].visited is False:
+                    edges = self.get_edges(vertex)
+                    self.id_map[vertex].visit()
+                    for edge in edges:
+                        if edge == target:
+                            return path + [edge]
+                        q.append((edge, path + [edge]))
+        return []
