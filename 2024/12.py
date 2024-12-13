@@ -1,10 +1,10 @@
 import re
 from pathlib import Path
-from helpers import read_file, Matrix, Node
+from helpers import read_file, Matrix, Node, Point
 
 
 PATH = Path(__file__)
-YEAR = str(PATH).split("\\")[-2]
+YEAR = str(PATH).split("/")[-2]
 DATA = read_file(f"./{YEAR}/{PATH.name.split('.')[0]}.txt")
 
 
@@ -39,9 +39,23 @@ class GardenNode(Node):
 
         return valid
 
+    def get_valid_neighbors_dict(self):
+        neighbors = {"up": None, "right": None, "left": None, "down": None}
+        if self.up:
+            neighbors["up"] = self.up
+        if self.right:
+            neighbors["right"] = self.right
+        if self.down:
+            neighbors["down"] = self.down
+        if self.left:
+            neighbors["left"] = self.left
+
+        return neighbors
+
 
 class Region:
-    def __init__(self):
+    def __init__(self, garden):
+        self.garden = garden
         self.nodes = []
         self.region = None
 
@@ -87,22 +101,124 @@ class Region:
         return self.area() * self.perimeter()
 
     def num_sides(self):
+        num_sides = 0
+        nodes = sorted(self.nodes, key=lambda n: n.point.x)
+        nodes = sorted(nodes, key=lambda n: n.point.y)
+        starting_node = nodes[0]
+
+        point = Point(starting_node.point.x, starting_node.point.y)
+        node = None
+
+        walking_point = Point(starting_node.point.x, starting_node.point.y - 1)
+        step = Point(1, 0)
+        while True:
+            if point == starting_node.point and step == Point(1, 0):
+                return num_sides
+
+            walking_point = walking_point + step
+            point = point + step
+
+            node = self.garden.at_point(point)
+            walking_node = self.garden.at_point(walking_point)
+
+            if (
+                node is not None
+                and node.value == self.region
+                and (walking_node is None or walking_node.value != self.region)
+            ):
+                # keep going straight
+                continue
+
+            if walking_node.value == self.region:
+                # turn left
+                if step.x == 0:
+                    if step.y == 1:
+                        step.x = 1
+                    else:
+                        step.x = -1
+                    step.y = 0
+                else:
+                    if step.x == 1:
+                        step.y = -1
+                    else:
+                        step.y = 1
+                    step.x = 0
+
+                # i think theres more here
+
+                num_sides += 1
+                continue
+
+            if node.value != self.region:
+                # turn right
+                if step.x == 0:
+                    if step.y == 1:
+                        step.x = -1
+                    else:
+                        step.x = 1
+                    step.y = 0
+                else:
+                    if step.x == 1:
+                        step.y = 1
+                    else:
+                        step.y = -1
+                    step.x = 0
+
+                # i think more here
+
+                num_sides += 1
+                continue
+
+        return num_sides
+        print(f"num neighers for {self.region}")
+        total_neighs = 0
+        for n in self.nodes:
+            neighs = n.get_valid_neighbors()
+            # print(len(neighs))
+            total_neighs += len(neighs)
+        print("total neighbors", total_neighs)
+        return 0
         if self.area() == 1:
             return 4
 
         corners = 0
         for n in self.nodes:
-            neighbors = n.get_valid_neighbors()
-            if len(neighbors) == 1:
+            neighbors = n.get_valid_neighbors_dict()
+            num_neighbors = len(n.get_valid_neighbors())
+            if num_neighbors == 1:
                 corners += 2
-            if len(neighbors) == 2:
-                corners += 2
-            if len(neighbors) == 3:
-                corners += 2
+            elif num_neighbors == 2:
+                if not (
+                    (neighbors["left"] is None and neighbors["right"] is None)
+                    or (neighbors["up"] is None and neighbors["down"] is None)
+                ):
+                    corners += 2
+            elif num_neighbors == 3:
+                # if
+                #     (neighbors["left"] is not None and neighbors["right"] is not None)
+                #     or (neighbors["up"] is None and neighbors["down"] is None)
+                # :
+                if neighbors["left"] is not None and neighbors["right"] is not None:
+                    neigh = neighbors["up"]
+                    if not neigh:
+                        neigh = neighbors["down"]
+                    num_neigh_neigh = len(neigh.get_valid_neighbors())
+                    if num_neigh_neigh == 1 or num_neigh_neigh == 2:
+                        corners += 2
+                elif neighbors["up"] is not None and neighbors["down"] is not None:
+                    neigh = neighbors["left"]
+                    if not neigh:
+                        neigh = neighbors["right"]
+                    num_neigh_neigh = len(neigh.get_valid_neighbors())
+                    if num_neigh_neigh == 1 or num_neigh_neigh == 2:
+                        corners += 2
 
         return corners
 
     def bulk_cost(self):
+        # print(
+        #     self.region, self.area(), self.num_sides(), self.area() * self.num_sides()
+        # )
         return self.area() * self.num_sides()
 
 
@@ -130,7 +246,7 @@ class Garden(Matrix):
                 node.down = self.at(node.point.x, node.point.y + 1)
 
     def create_and_add_new_region(self, node):
-        new_region = Region()
+        new_region = Region(self)
         new_region.add_node(node)
         if node.value in self.regions:
             self.regions[node.value].append(new_region)
