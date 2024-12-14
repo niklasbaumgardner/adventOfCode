@@ -66,6 +66,12 @@ class Point:
     def __sub__(self, other):
         return Point(self.x - other.x, self.y - other.y)
 
+    def __mul__(self, other):
+        return Point(self.x * other.x, self.y * other.y)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
     def __hash__(self):
         return hash(tuple([self.x, self.y]))
 
@@ -73,12 +79,6 @@ class Point:
         xSquared = (other.x - self.x) ** 2
         ySquared = (other.y - self.y) ** 2
         return math.sqrt(xSquared + ySquared)
-
-    def __add__(self, other):
-        return Point(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other):
-        return Point(self.x - other.x, self.y - other.y)
 
 
 class Node:
@@ -93,6 +93,9 @@ class Node:
     #     return f"{self.value}"
 
     def __repr__(self):
+        return self.__str__()
+
+    def matrix_repr(self):
         return self.__str__()
 
     def __hash__(self):
@@ -116,7 +119,10 @@ class Matrix:
         for row in self.matrix:
             row_string = ""
             for node in row:
-                row_string += str(node)
+                try:
+                    row_string += node.matrix_repr()
+                except:
+                    row_string += str(node)
             string += row_string + "\n"
         return string
 
@@ -152,6 +158,19 @@ class Matrix:
             return None
 
         return self.matrix[y][x]
+
+    def set_point(self, point, value):
+        self.set(point.x, point.y, value)
+
+    def set(self, x, y, value):
+        if not (-1 < x < self.num_cols):
+            return False
+
+        if not (-1 < y < self.num_rows):
+            return False
+
+        self.matrix[y][x] = value
+        return True
 
 
 class LinkedNode:
