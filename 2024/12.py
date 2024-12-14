@@ -4,7 +4,7 @@ from helpers import read_file, Matrix, Node, Point
 
 
 PATH = Path(__file__)
-YEAR = str(PATH).split("/")[-2]
+YEAR = str(PATH).split("\\")[-2]
 DATA = read_file(f"./{YEAR}/{PATH.name.split('.')[0]}.txt")
 
 
@@ -41,13 +41,13 @@ class GardenNode(Node):
 
     def get_valid_neighbors_dict(self):
         neighbors = {"up": None, "right": None, "left": None, "down": None}
-        if self.up:
+        if self.up and self.up.value == self.value:
             neighbors["up"] = self.up
-        if self.right:
+        if self.right and self.right.value == self.value:
             neighbors["right"] = self.right
-        if self.down:
+        if self.down and self.down.value == self.value:
             neighbors["down"] = self.down
-        if self.left:
+        if self.left and self.left.value == self.value:
             neighbors["left"] = self.left
 
         return neighbors
@@ -100,7 +100,8 @@ class Region:
     def cost(self):
         return self.area() * self.perimeter()
 
-    def num_sides(self):
+    def exterior_sides(self):
+        # print(f"counting num sides for region {self.region}")
         num_sides = 0
         nodes = sorted(self.nodes, key=lambda n: n.point.x)
         nodes = sorted(nodes, key=lambda n: n.point.y)
@@ -111,8 +112,11 @@ class Region:
 
         walking_point = Point(starting_node.point.x, starting_node.point.y - 1)
         step = Point(1, 0)
+        # print("starting node", starting_node)
         while True:
-            if point == starting_node.point and step == Point(1, 0):
+            # print()
+            if point == starting_node.point and step == Point(1, 0) and num_sides > 0:
+                # print(f"{self.region}: num_sides is {num_sides}!!")
                 return num_sides
 
             walking_point = walking_point + step
@@ -121,16 +125,27 @@ class Region:
             node = self.garden.at_point(point)
             walking_node = self.garden.at_point(walking_point)
 
+            # if node is None and walking_node is None:
+            #     print(f"num_sides is {num_sides}!!")
+            #     return num_sides
+
+            # print(f"step: {step}")
+            # print(f"walking_point: {walking_point}, point: {point}")
+            # print(f"walking_node: {walking_node}, node: {node}")
+
             if (
                 node is not None
                 and node.value == self.region
                 and (walking_node is None or walking_node.value != self.region)
             ):
                 # keep going straight
+                # print("continue straight")
                 continue
 
-            if walking_node.value == self.region:
+            if walking_node is not None and walking_node.value == self.region:
+                walking_point = walking_point - step
                 # turn left
+                # print("turning left")
                 if step.x == 0:
                     if step.y == 1:
                         step.x = 1
@@ -145,12 +160,15 @@ class Region:
                     step.x = 0
 
                 # i think theres more here
+                walking_point = walking_point - step
 
                 num_sides += 1
                 continue
 
-            if node.value != self.region:
+            if node is None or (node is not None and node.value != self.region):
+                point = point - step
                 # turn right
+                # print("turning right")
                 if step.x == 0:
                     if step.y == 1:
                         step.x = -1
@@ -164,62 +182,197 @@ class Region:
                         step.y = -1
                     step.x = 0
 
+                walking_point = walking_point + step
+
                 # i think more here
 
                 num_sides += 1
                 continue
 
+    def interior_sides(self):
+        # print(f"counting num sides for region {self.region}")
+        num_sides = 0
+        nodes = sorted(self.nodes, key=lambda n: n.point.x)
+        nodes = sorted(nodes, key=lambda n: n.point.y)
+        starting_node = nodes[0]
+
+        point = Point(starting_node.point.x, starting_node.point.y)
+        node = None
+
+        walking_point = Point(starting_node.point.x, starting_node.point.y - 1)
+        step = Point(1, 0)
+        # print("starting node", starting_node)
+        while True:
+            # print()
+            if point == starting_node.point and step == Point(1, 0) and num_sides > 0:
+                # print(f"{self.region}: num_sides is {num_sides}!!")
+                return num_sides
+
+            walking_point = walking_point + step
+            point = point + step
+
+            node = self.garden.at_point(point)
+            walking_node = self.garden.at_point(walking_point)
+
+            # if node is None and walking_node is None:
+            #     print(f"num_sides is {num_sides}!!")
+            #     return num_sides
+
+            # print(f"step: {step}")
+            # print(f"walking_point: {walking_point}, point: {point}")
+            # print(f"walking_node: {walking_node}, node: {node}")
+
+            if (
+                node is not None
+                and node.value == self.region
+                and (walking_node is None or walking_node.value != self.region)
+            ):
+                # keep going straight
+                # print("continue straight")
+                continue
+
+            if walking_node is not None and walking_node.value == self.region:
+                walking_point = walking_point - step
+                # turn left
+                # print("turning left")
+                if step.x == 0:
+                    if step.y == 1:
+                        step.x = 1
+                    else:
+                        step.x = -1
+                    step.y = 0
+                else:
+                    if step.x == 1:
+                        step.y = -1
+                    else:
+                        step.y = 1
+                    step.x = 0
+
+                # i think theres more here
+                walking_point = walking_point - step
+
+                num_sides += 1
+                continue
+
+            if node is None or (node is not None and node.value != self.region):
+                point = point - step
+                # turn right
+                # print("turning right")
+                if step.x == 0:
+                    if step.y == 1:
+                        step.x = -1
+                    else:
+                        step.x = 1
+                    step.y = 0
+                else:
+                    if step.x == 1:
+                        step.y = 1
+                    else:
+                        step.y = -1
+                    step.x = 0
+
+                walking_point = walking_point + step
+
+                # i think more here
+
+                num_sides += 1
+                continue
+
+    def count_all_sides(self):
+        num_sides = 0
+        # nodes = sorted(self.nodes, key=lambda n: n.point.x)
+        # nodes = sorted(nodes, key=lambda n: n.point.y)
+        top_sides = dict()
+        bottom_sides = dict()
+        for n in self.nodes:
+            top_fence = n.point.y - 0.5
+            bottom_fence = n.point.y + 0.5
+            neighs = n.get_valid_neighbors_dict()
+            if neighs["up"] is None:
+                if top_fence in top_sides:
+                    top_sides[top_fence].append(n)
+                else:
+                    top_sides[top_fence] = [n]
+
+            if neighs["down"] is None:
+                if bottom_fence in bottom_sides:
+                    bottom_sides[bottom_fence].append(n)
+                else:
+                    bottom_sides[bottom_fence] = [n]
+
+        for sides in [top_sides, bottom_sides]:
+            for k, v in sides.items():
+                sorted_v = sorted(v, key=lambda n: n.point.x)
+                # print(k, sorted_v)
+                length = len(sorted_v)
+                temp = 0
+                for i in range(len(sorted_v) - 1):
+                    node = sorted_v[i]
+                    next = sorted_v[i + 1]
+                    # print(i, i + 1, length)
+                    if (next.point.x - node.point.x) == 1:
+                        temp += 1
+
+                # print(length, temp)
+                num_sides += length - temp
+
+        # print(f"Num row sides: {num_sides}")
+        # print()
+
+        left_sides = dict()
+        right_sides = dict()
+        for n in self.nodes:
+            left_fence = n.point.x - 0.5
+            right_fence = n.point.x + 0.5
+            neighs = n.get_valid_neighbors_dict()
+            if neighs["left"] is None:
+                if left_fence in left_sides:
+                    left_sides[left_fence].append(n)
+                else:
+                    left_sides[left_fence] = [n]
+
+            if neighs["right"] is None:
+                if right_fence in right_sides:
+                    right_sides[right_fence].append(n)
+                else:
+                    right_sides[right_fence] = [n]
+
+        for sides in [left_sides, right_sides]:
+            for k, v in sides.items():
+                sorted_v = sorted(v, key=lambda n: n.point.y)
+                # print(k, sorted_v)
+                length = len(sorted_v)
+                temp = 0
+                for i in range(len(sorted_v) - 1):
+                    node = sorted_v[i]
+                    next = sorted_v[i + 1]
+                    # print(i, i + 1, length)
+                    if (next.point.y - node.point.y) == 1:
+                        temp += 1
+
+                # print(length, temp)
+                num_sides += length - temp
+
+        # print(f"Num row sides: {num_sides}")
+        # print()
+
         return num_sides
-        print(f"num neighers for {self.region}")
-        total_neighs = 0
-        for n in self.nodes:
-            neighs = n.get_valid_neighbors()
-            # print(len(neighs))
-            total_neighs += len(neighs)
-        print("total neighbors", total_neighs)
-        return 0
-        if self.area() == 1:
-            return 4
 
-        corners = 0
-        for n in self.nodes:
-            neighbors = n.get_valid_neighbors_dict()
-            num_neighbors = len(n.get_valid_neighbors())
-            if num_neighbors == 1:
-                corners += 2
-            elif num_neighbors == 2:
-                if not (
-                    (neighbors["left"] is None and neighbors["right"] is None)
-                    or (neighbors["up"] is None and neighbors["down"] is None)
-                ):
-                    corners += 2
-            elif num_neighbors == 3:
-                # if
-                #     (neighbors["left"] is not None and neighbors["right"] is not None)
-                #     or (neighbors["up"] is None and neighbors["down"] is None)
-                # :
-                if neighbors["left"] is not None and neighbors["right"] is not None:
-                    neigh = neighbors["up"]
-                    if not neigh:
-                        neigh = neighbors["down"]
-                    num_neigh_neigh = len(neigh.get_valid_neighbors())
-                    if num_neigh_neigh == 1 or num_neigh_neigh == 2:
-                        corners += 2
-                elif neighbors["up"] is not None and neighbors["down"] is not None:
-                    neigh = neighbors["left"]
-                    if not neigh:
-                        neigh = neighbors["right"]
-                    num_neigh_neigh = len(neigh.get_valid_neighbors())
-                    if num_neigh_neigh == 1 or num_neigh_neigh == 2:
-                        corners += 2
+    def num_sides(self):
+        return self.count_all_sides()
+        ###########################
+        e_s = self.exterior_sides()
+        i_s = self.interior_sides()
 
-        return corners
+        return e_s + i_s
 
     def bulk_cost(self):
-        # print(
-        #     self.region, self.area(), self.num_sides(), self.area() * self.num_sides()
-        # )
-        return self.area() * self.num_sides()
+        a = self.area()
+        s = self.num_sides()
+
+        # print(f"{self.region}: {a}, {s}, {a*s}")
+        # print("\n\n\n\n\n")
+        return a * s
 
 
 class Garden(Matrix):
@@ -315,6 +468,10 @@ def part2():
     # print(matrix)
     matrix.create_regions()
     cost = matrix.get_bulk_fence_cost()
+
+    # too low 882270
+    # too low 900368
+
     return cost
 
 
