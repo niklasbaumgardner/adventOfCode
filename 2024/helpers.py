@@ -141,10 +141,18 @@ class Matrix:
 
     @property
     def num_cols(self):
+        return self.x
+
+    @property
+    def x(self):
         return len(self.matrix[0])
 
     @property
     def num_rows(self):
+        return self.y
+
+    @property
+    def y(self):
         return len(self.matrix)
 
     def at_point(self, point):
