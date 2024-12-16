@@ -196,10 +196,18 @@ class Warehouse2(Warehouse):
         x2 = node2.point.x
         y2 = node2.point.y
 
-        self.matrix[y1][x1], self.matrix[y2][x2] = (
-            self.matrix[y2][x2],
-            self.matrix[y1][x1],
-        )
+        if y1 == y2:
+            if node1.is_box:
+                self.matrix[y1].pop(x2)
+            elif node2.is_box:
+                self.matrix[y1].pop(x1)
+
+        else:
+            pass
+        # self.matrix[y1][x1], self.matrix[y2][x2] = (
+        #     self.matrix[y2][x2],
+        #     self.matrix[y1][x1],
+        # )
 
         if node1.is_box:
             # x1 and x1 + 1 are the box
