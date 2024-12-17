@@ -16,7 +16,7 @@ class LanterNode(Node):
 
     @property
     def is_box(self):
-        return self.value == "O"
+        return self.value == "O" or self.value in ["[", "]"]
 
     @property
     def is_robot(self):
@@ -111,14 +111,11 @@ class Warehouse(Matrix):
                 self.__swap_nodes__(self.robot, self.at_point(move_point))
 
     def follow_directions(self):
-        total_gps = 0
         for ch in self.directions:
             self.move_robot(ch)
-            print(f"After move {ch}: ")
-            print(self)
-            print()
-
-        return total_gps
+            # print(f"After move {ch}: ")
+            # print(self)
+            # print()
 
 
 class Warehouse2(Warehouse):
@@ -140,9 +137,10 @@ class Warehouse2(Warehouse):
                     row.append(node2)
                     self.robot = node1
                 elif value == "O":
-                    node1 = LanterNode(value, 2 * x, y)
+                    node1 = LanterNode("[", 2 * x, y)
                     row.append(node1)
-                    row.append(node1)
+                    node2 = LanterNode("]", (2 * x) + 1, y)
+                    row.append(node2)
 
             self.matrix.append(row)
 
@@ -152,80 +150,83 @@ class Warehouse2(Warehouse):
         for y, row in enumerate(self.matrix):
             row_string = ""
             for x, node in enumerate(row):
-                if node.is_box:
-                    string_val = "["
-                    if node.point.x != x:
-                        string_val = "]"
-
-                    row_string += string_val
-                else:
-                    row_string += str(node)
+                row_string += str(node)
             string += row_string + "\n"
         return string
 
-    def maybe_swap_nodes(self, node1, node2):
-        if not node1.can_move or not node2.can_move:
-            return False
-
-        self.__swap_nodes__(node1, node2)
-        return True
-
-    def maybe_push_node(self, node, dir):
+    def maybe_push_points_vertically(self, points, dir):
         move_dir = MOVEMENT[dir]
-        point = node.point + move_dir
 
-        next_node = self.at_point(point)
+        all_empty = True
+        empty_or_box_only = False
+        for point in points:
+            next_point = point + move_dir
+            next_node = self.at_point(next_point)
+
+            if next_node.is_wall:
+                return False
+
+            elif next_node.is_box:
+                empty_or_box_only = True
+                all_empty = False
+
+        did_swap = False
+        if empty_or_box_only:
+            next_points = set()
+            for point in points:
+                next_point = point + move_dir
+                next_node = self.at_point(next_point)
+
+                if next_node.is_box:
+                    other_box_point = Point(next_point.x, next_point.y)
+                    if next_node.value == "[":
+                        other_box_point.x += 1
+                    else:
+                        other_box_point.x -= 1
+                    next_points.add(next_point)
+                    next_points.add(other_box_point)
+            did_swap = self.maybe_push_points_vertically(list(next_points), dir)
+
+        if all_empty or did_swap:
+            for point in points:
+                next_point = point + move_dir
+                next_node = self.at_point(next_point)
+                self.__swap_points__(point, next_point)
+            return True
+
+    def maybe_push_node(self, point, dir):
+        move_dir = MOVEMENT[dir]
+        next_point = point + move_dir
+
+        node = self.at_point(point)
+
+        next_node = self.at_point(next_point)
 
         if next_node.is_empty:
-            self.__swap_nodes__(node, next_node)
+            self.__swap_points__(point, next_point)
             return True
         elif next_node.is_box:
-            if self.maybe_push_node(next_node, dir):
-                self.__swap_nodes__(node, self.at_point(point))
+            if self.maybe_push_node(next_point, dir):
+                self.__swap_points__(point, next_point)
                 return True
         elif next_node.is_wall:
             return False
 
-    def __swap_nodes__(self, node1, node2):
+    def __swap_points__(self, p1, p2):
+        node1 = self.at_point(p1)
+        node2 = self.at_point(p2)
 
-        if node1.is_box or node2.is_box:
-            print("before swap", node1.point_str(), node2.point_str())
+        x1 = p1.x
+        y1 = p1.y
+        x2 = p2.x
+        y2 = p2.y
 
-        x1 = node1.point.x
-        y1 = node1.point.y
-        x2 = node2.point.x
-        y2 = node2.point.y
-
-        if y1 == y2:
-            if node1.is_box:
-                self.matrix[y1].pop(x2)
-            elif node2.is_box:
-                self.matrix[y1].pop(x1)
-
-        else:
-            pass
-        # self.matrix[y1][x1], self.matrix[y2][x2] = (
-        #     self.matrix[y2][x2],
-        #     self.matrix[y1][x1],
-        # )
-
-        if node1.is_box:
-            # x1 and x1 + 1 are the box
-
-            self.matrix[y1][x1 + 1], self.matrix[y1][x1] = (
-                self.matrix[y1][x1],
-                self.matrix[y1][x1 + 1],
-            )
-
-        # if node2.is_box:
-        #     self.matrix[y2][x2], self.matrix[y2][x2 + 1] = (
-        #         self.matrix[y2][x2 + 1],
-        #         self.matrix[y2][x2],
-        #     )
+        self.matrix[y1][x1], self.matrix[y2][x2] = (
+            self.matrix[y2][x2],
+            self.matrix[y1][x1],
+        )
 
         node1.point, node2.point = node2.point, node1.point
-
-        print("after swap", self.at(x1, y1).point_str(), self.at(x2, y2).point_str())
 
     def move_robot(self, dir):
         move_dir = MOVEMENT[dir]
@@ -233,21 +234,39 @@ class Warehouse2(Warehouse):
         move_node = self.at_point(move_point)
 
         if move_node.is_empty:
-            self.__swap_nodes__(self.robot, move_node)
+            self.__swap_points__(self.robot.point, move_point)
 
         elif move_node.is_box:
-            if self.maybe_push_node(move_node, dir):
-                self.__swap_nodes__(self.robot, self.at_point(move_point))
+            if move_dir.y != 0:
+                other_box_point = Point(move_point.x, move_point.y)
+                if move_node.value == "[":
+                    other_box_point.x += 1
+                else:
+                    other_box_point.x -= 1
+
+                if self.maybe_push_points_vertically(
+                    [move_point, other_box_point], dir
+                ):
+                    self.__swap_points__(self.robot.point, move_point)
+            else:
+                if self.maybe_push_node(move_point, dir):
+                    self.__swap_points__(self.robot.point, move_point)
 
     def follow_directions(self):
-        total_gps = 0
         for ch in self.directions:
             self.move_robot(ch)
-            print(f"After move {ch}: ")
-            print(self)
-            print()
+            # print(f"After move {ch}: ")
+            # print(self)
+            # print()
 
-        return total_gps
+    def gps(self):
+        total = 0
+        for row in self.matrix:
+            for node in row:
+                if node.value == "[":
+                    total += node.gps()
+
+        return total
 
 
 PATH = Path(__file__)
@@ -265,7 +284,7 @@ def part1():
     print(w)
     print()
 
-    total_gps = w.follow_directions()
+    w.follow_directions()
 
     print("After all moves: ")
     print(w)
@@ -283,12 +302,12 @@ def part2():
     print(w)
     print()
 
-    total_gps = w.follow_directions()
+    w.follow_directions()
 
-    # print("After all moves: ")
-    # print(w)
-    # print()
-    # return w.gps()
+    print("After all moves: ")
+    print(w)
+    print()
+    return w.gps()
 
 
 def main():
