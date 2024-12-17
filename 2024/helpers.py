@@ -119,10 +119,7 @@ class Matrix:
         for row in self.matrix:
             row_string = ""
             for node in row:
-                try:
-                    row_string += node.matrix_repr()
-                except:
-                    row_string += str(node)
+                row_string += str(node)
             string += row_string + "\n"
         return string
 
@@ -135,7 +132,7 @@ class Matrix:
             row = []
             line_lst = list(line)
             for x, value in enumerate(line_lst):
-                row.append(Node(value=value, x=x, y=y))
+                row.append(Node(value, x, y))
 
             self.matrix.append(row)
 
