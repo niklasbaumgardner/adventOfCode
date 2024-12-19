@@ -2,6 +2,7 @@
 #include <future>
 #include <vector>
 #include <iostream>
+#include <math.h>
 using namespace std;
 
 class Computer {
@@ -172,7 +173,8 @@ class Computer {
 };
 
 long test_run(long a, long b, long c, vector<int> program) {
-  long testA = 9999999999;
+  // long testA = 9999999999;
+  long testA = 8240000000;
   while (true) {
     a = testA;
 
