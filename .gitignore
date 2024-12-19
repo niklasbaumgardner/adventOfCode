@@ -114,5 +114,9 @@ dmypy.json
 .pyre/
 
 
-# ignore all input files 
+# ignore all input files
 *.txt
+
+# ignore build files
+*.out
+*.o

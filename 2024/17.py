@@ -181,8 +181,8 @@ class Computer:
 
     def test_run(self):
 
-        i = 999999999
-        i += 1
+        i = 8240000000
+        # i += 1
         while True:
             # computer = Computer(a, b, c, program, True)
             # for i in range(10000000, 999999999):
@@ -192,7 +192,8 @@ class Computer:
             if self.log == self.program:
                 return i
 
-            if i >= 10000000 and (i % 10000000) == 0:
+            # if i >= 10000000 and (i % 10000000) == 0:
+            if (i % 10000000) == 0:
                 print("Checked up to", i)
 
             self.reset()
