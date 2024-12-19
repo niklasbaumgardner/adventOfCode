@@ -1,5 +1,5 @@
 from pathlib import Path
-from helpers import read_file, Point, Matrix, Node
+from helpers import read_file, Point, BaseGraph, Node
 import time
 
 PATH = Path(__file__)
@@ -7,7 +7,7 @@ YEAR = str(PATH).split("\\")[-2]
 DATA = read_file(f"./{YEAR}/{PATH.name.split('.')[0]}.txt")
 
 
-class Matrix18(Matrix):
+class Matrix18(BaseGraph):
     def __init__(self, points, width, height):
         # super().__init__(data)
         self.points = set(points)
@@ -35,6 +35,9 @@ class Matrix18(Matrix):
                 row.append(node)
             self.matrix.append(row)
 
+    def is_node_valid_edge(self, node):
+        return node and node.value == "."
+
     def get_neightbors(self, node):
         neighbors = []
         for p in [Point(1, 0), Point(-1, 0), Point(0, 1), Point(0, -1)]:
@@ -47,19 +50,7 @@ class Matrix18(Matrix):
         self.start = self.at(0, 0)
         self.end = self.at(self.x - 1, self.y - 1)
 
-        visited = set()
-
-        q = [(self.start, [self.start])]
-        while q:
-            node, path = q.pop(0)
-            edges = self.get_neightbors(node)
-            for edge in edges:
-                if edge not in visited:
-                    if edge == self.end:
-                        return path + [edge]
-                    q.append((edge, path + [edge]))
-                    visited.add(edge)
-        return []
+        return self.bfs(self.start, self.end)
 
 
 def part1():

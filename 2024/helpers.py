@@ -1,4 +1,5 @@
 import math
+import heapq
 
 
 def read_file(filename):
@@ -107,6 +108,9 @@ class Node:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __lt__(self, other):
+        return True
+
 
 class Matrix:
     def __init__(self, data):
@@ -176,6 +180,102 @@ class Matrix:
 
         self.matrix[y][x] = value
         return True
+
+
+class PriorityQueue:
+    def __init__(self, initial_queue):
+        self.heap = initial_queue
+
+    def push(self, tup):
+        heapq.heappush(self.heap, tup)
+
+    def pop(self):
+        return heapq.heappop(self.heap)
+
+    @property
+    def size(self):
+        return len(self.heap)
+
+
+class BaseGraph(Matrix):
+    def is_node_valid_edge(self, node):
+        # overwrite this
+        return node is not None
+
+    def get_edges(self, node):
+        edges = []
+        for p in [Point(1, 0), Point(-1, 0), Point(0, 1), Point(0, -1)]:
+            n = self.at_point(node.point + p)
+            if self.is_node_valid_edge(n):
+                edges.append(n)
+        return edges
+
+    def bfs(self, start_node, end_node):
+        if start_node == end_node:
+            return [start_node]
+
+        visited = set()
+        q = [(start_node, [start_node])]
+        while q:
+            node, path = q.pop(0)
+            edges = self.get_edges(node)
+            for edge in edges:
+                if edge.point not in visited:
+                    if edge == end_node:
+                        return path + [edge]
+
+                    q.append((edge, path + [edge]))
+                    visited.add(edge.point)
+        return []
+
+    def dfs(self, start_node, end_node):
+        if start_node == end_node:
+            return [start_node]
+
+        visited = set()
+        q = [(start_node, [start_node])]
+        while q:
+            node, path = q.pop()
+            if edge.point not in visited:
+                edges = self.get_edges(node)
+                visited.add(node.point)
+                for edge in edges:
+                    if edge == end_node:
+                        return path + [edge]
+                    q.append((edge, path + [edge]))
+        return []
+
+    def get_cost(self, node):
+        return 1
+
+    def dijkstra(self, start_node):
+        dist = {}
+        prev = {}
+
+        for row in self.matrix:
+            for node in row:
+                if self.is_node_valid_edge(node):
+                    dist[node.point] = 999999999
+                    prev[node.point] = None
+
+        dist[start_node.point] = 0
+
+        pq = PriorityQueue([(0, start_node)])
+
+        while pq.size:
+            cost, node = pq.pop()
+
+            edges = self.get_edges(node)
+            for edge in edges:
+                new_cost = cost + self.get_cost(node)
+
+                if new_cost < dist[edge.point]:
+                    dist[edge.point] = new_cost
+                    prev[edge.point] = node
+
+                    pq.push((new_cost, edge))
+
+        return dist, prev
 
 
 class LinkedNode:
