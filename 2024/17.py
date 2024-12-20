@@ -181,20 +181,22 @@ class Computer:
 
     def test_run(self):
 
-        i = 8240000000
+        i = 35184372088832
         # i += 1
         while True:
             # computer = Computer(a, b, c, program, True)
             # for i in range(10000000, 999999999):
+            i = int(input("Enter register A: "))
             self.set_a(i)
 
             self.run_program()
+            print(self.log_string(), len(self.log), len(self.program))
             if self.log == self.program:
                 return i
 
             # if i >= 10000000 and (i % 10000000) == 0:
-            if (i % 10000000) == 0:
-                print("Checked up to", i)
+            # if (i % 10000000) == 0:
+            #     print("Checked up to", i)
 
             self.reset()
             i += 1
@@ -211,11 +213,11 @@ def part2():
     # print(a, b, c, program)
     c = Computer(True)
 
-    start = time.time()
+    # start = time.time()
     num = c.test_run()
-    end = time.time()
+    # end = time.time()
 
-    print(f"Completed Part 2 in {end - start} seconds")
+    # print(f"Completed Part 2 in {end - start} seconds")
     return num
 
 
