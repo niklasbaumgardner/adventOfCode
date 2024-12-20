@@ -198,6 +198,15 @@ class PriorityQueue:
 
 
 class BaseGraph(Matrix):
+    def count_values(self, value):
+        count = 0
+        for row in self.matrix:
+            for node in row:
+                if node.value == value:
+                    count += 1
+
+        return count
+
     def is_node_valid_edge(self, node):
         # overwrite this
         return node is not None
