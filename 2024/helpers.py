@@ -81,6 +81,13 @@ class Point:
         ySquared = (other.y - self.y) ** 2
         return math.sqrt(xSquared + ySquared)
 
+    def straight_distance_to(self, other):
+        diff = other - self
+        if diff.x == 0 or diff.y == 0:
+            return diff
+
+        return None
+
 
 class Node:
     def __init__(self, value, x, y):
@@ -207,6 +214,16 @@ class BaseGraph(Matrix):
 
         return count
 
+    def __str__(self):
+        # return self.string
+        string = ""
+        for row in self.matrix:
+            row_string = ""
+            for node in row:
+                row_string += str(node.value)
+            string += row_string + "\n"
+        return string
+
     def is_node_valid_edge(self, node):
         # overwrite this
         return node is not None
@@ -219,7 +236,7 @@ class BaseGraph(Matrix):
                 edges.append(n)
         return edges
 
-    def bfs(self, start_node, end_node):
+    def bfs(self, start_node=None, end_node=None):
         if start_node == end_node:
             return [start_node]
 
