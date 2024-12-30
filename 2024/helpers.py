@@ -1,6 +1,8 @@
 import math
 import heapq
 
+INFINITY = 99999999999999999999
+
 
 def read_file(filename):
     fp = open(filename)
@@ -87,6 +89,11 @@ class Point:
             return diff
 
         return None
+
+    def point_in_between(self, other):
+        x = (self.x + other.x) // 2
+        y = (self.y + other.y) // 2
+        return Point(x, y)
 
 
 class Node:
@@ -226,7 +233,7 @@ class BaseGraph(Matrix):
 
     def is_node_valid_edge(self, node):
         # overwrite this
-        return node is not None
+        return node is not None and node.value is not None
 
     def get_edges(self, node):
         edges = []
@@ -237,7 +244,15 @@ class BaseGraph(Matrix):
         return edges
 
     def bfs(self, start_node=None, end_node=None):
-        if start_node == end_node:
+        if not start_node:
+            start_node = self.start
+        if not end_node:
+            end_node = self.end
+
+        return self.__bfs__(start_node, end_node.value)
+
+    def __bfs__(self, start_node, end_value):
+        if start_node.value == end_value:
             return [start_node]
 
         visited = set()
@@ -247,26 +262,34 @@ class BaseGraph(Matrix):
             edges = self.get_edges(node)
             for edge in edges:
                 if edge.point not in visited:
-                    if edge == end_node:
+                    if edge.value == end_value:
                         return path + [edge]
 
                     q.append((edge, path + [edge]))
                     visited.add(edge.point)
         return []
 
-    def dfs(self, start_node, end_node):
-        if start_node == end_node:
+    def dfs(self, start_node=None, end_node=None):
+        if not start_node:
+            start_node = self.start
+        if not end_node:
+            end_node = self.end
+
+        return self.__dfs__(start_node, end_node.value)
+
+    def __dfs__(self, start_node, end_value):
+        if start_node.value == end_value:
             return [start_node]
 
         visited = set()
         q = [(start_node, [start_node])]
         while q:
             node, path = q.pop()
-            if edge.point not in visited:
+            if node.point not in visited:
                 edges = self.get_edges(node)
                 visited.add(node.point)
                 for edge in edges:
-                    if edge == end_node:
+                    if edge.value == end_value:
                         return path + [edge]
                     q.append((edge, path + [edge]))
         return []
@@ -300,6 +323,73 @@ class BaseGraph(Matrix):
                     prev[edge.point] = node
 
                     pq.push((new_cost, edge))
+
+        return dist, prev
+
+    def reconstruct_path(self, prev_dict, node):
+        path = []
+        print(node)
+        for k, v in prev_dict.items():
+            print(k, v)
+        while node:
+            path.append(node)
+            node = prev_dict[node.point]
+        path.reverse()
+        return path
+
+    def reconstruct_path_with_dir(self, cost_dict, prev_dict, node):
+        path = [node]
+        min_path = INFINITY
+        for dir in "NSEW":
+            cost = cost_dict[(node.point, dir)]
+            # print(cost)
+            if cost < min_path:
+                min_path = cost
+                min_prev = prev_dict[(node.point, dir)]
+
+        node, dir = min_prev
+
+        while node:
+            path.append(node)
+            if not dir:
+                break
+            node, dir = prev_dict[(node.point, dir)]
+            # print(node, dir)
+
+        path.reverse()
+        return path
+
+    def a_star(self, start_node, end_node):
+        dist = {}
+        prev = {}
+
+        for row in self.matrix:
+            for node in row:
+                if self.is_node_valid_edge(node):
+                    dist[node.point] = 999999999
+                    prev[node.point] = None
+
+        # visited = set()
+
+        dist[start_node.point] = 0
+
+        pq = PriorityQueue([(start_node.point.distance_to(end_node.point), start_node)])
+
+        while pq.size:
+            cost, node = pq.pop()
+
+            if node == end_node:
+                return self.reconstruct_path(prev, node)
+
+            edges = self.get_edges(node)
+            for edge in edges:
+                new_cost = cost + self.get_cost(node)
+
+                if new_cost < dist[edge.point]:
+                    dist[edge.point] = new_cost
+                    prev[edge.point] = node
+
+                    pq.push((node.point.distance_to(end_node.point), edge))
 
         return dist, prev
 
