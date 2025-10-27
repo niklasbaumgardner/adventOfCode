@@ -348,16 +348,19 @@ class BaseGraph(Matrix):
                 min_prev = prev_dict[(node.point, dir)]
 
         node, dir = min_prev
+        prev_dir = None
 
         while node:
             path.append(node)
             if not dir:
                 break
+            prev_dir = dir
             node, dir = prev_dict[(node.point, dir)]
+
             # print(node, dir)
 
         path.reverse()
-        return path
+        return path, prev_dir
 
     def a_star(self, start_node, end_node):
         dist = {}

@@ -1,11 +1,11 @@
-import re
-from pathlib import Path
+import os
 from helpers import read_file, BaseGraph, Node, Point, PriorityQueue
 
 
-PATH = Path(__file__)
-YEAR = str(PATH).split("/")[-2]
-DATA = read_file(f"./{YEAR}/{PATH.name.split('.')[0]}.txt")
+FILENAME = os.path.basename(__file__)
+YEAR = os.path.basename(os.path.dirname(__file__))
+TEXT_FILE_PATH = os.path.join(".", YEAR, FILENAME.split(".")[0] + ".txt")
+DATA = read_file(TEXT_FILE_PATH)
 
 
 POINT_TO_ARROW = {
@@ -14,11 +14,19 @@ POINT_TO_ARROW = {
     Point(0, -1): "^",
     Point(0, 1): "v",
 }
-CURRENT_DIR_TO_NEXT_POINTS = {
-    "N": [(Point(0, -1), 1), (Point(1, 0), 5), (Point(-1, 0), 15)],
-    "E": [(Point(1, 0), 1), (Point(0, 1), 5), (Point(0, -1), 5)],
-    "S": [(Point(0, 1), 1), (Point(1, 0), 5), (Point(-1, 0), 15)],
-    "W": [(Point(-1, 0), 1), (Point(0, 1), 1.5), (Point(0, -1), 1.5)],
+CURRENT_DIR_TO_NEXT_POINTS_NUMPAD = {
+    "N": [(Point(0, -1), 3), (Point(0, 1), 11), (Point(1, 0), 9), (Point(-1, 0), 6)],
+    "E": [(Point(1, 0), 4), (Point(-1, 0), 11), (Point(0, 1), 7), (Point(0, -1), 8)],
+    "S": [(Point(0, 1), 2), (Point(0, -1), 11), (Point(1, 0), 9), (Point(-1, 0), 6)],
+    "W": [(Point(-1, 0), 1), (Point(1, 0), 11), (Point(0, 1), 7), (Point(0, -1), 8)],
+    None: [(Point(-1, 0), 1), (Point(1, 0), 4), (Point(0, 1), 2), (Point(0, -1), 3)],
+}
+CURRENT_DIR_TO_NEXT_POINTS_ARROWPAD = {
+    "N": [(Point(0, -1), 3), (Point(0, 1), 11), (Point(1, 0), 9), (Point(-1, 0), 6)],
+    "E": [(Point(1, 0), 4), (Point(-1, 0), 11), (Point(0, 1), 7), (Point(0, -1), 8)],
+    "S": [(Point(0, 1), 2), (Point(0, -1), 11), (Point(1, 0), 9), (Point(-1, 0), 6)],
+    "W": [(Point(-1, 0), 1), (Point(1, 0), 11), (Point(0, 1), 7), (Point(0, -1), 8)],
+    None: [(Point(-1, 0), 1), (Point(1, 0), 4), (Point(0, 1), 2), (Point(0, -1), 3)],
 }
 POINT_TO_DIR = {
     Point(0, -1): "N",
@@ -130,10 +138,7 @@ class Numpad(BaseGraph):
         return None
 
     def get_edges(self, node, current_dir):
-        if current_dir is None:
-            next_points = [(p, 1) for p in POINT_TO_DIR.keys()]
-        else:
-            next_points = CURRENT_DIR_TO_NEXT_POINTS[current_dir]
+        next_points = CURRENT_DIR_TO_NEXT_POINTS_NUMPAD[current_dir]
 
         edges = []
         for p, cost in next_points:
@@ -149,9 +154,9 @@ class Numpad(BaseGraph):
 
         return 10
 
-    def dijkstra(self, start_node, end_node):
+    def dijkstra(self, start_node, end_node, start_dir):
         if start_node.point == end_node.point:
-            return []
+            return [], start_dir
 
         dist = {}
         prev = {}
@@ -163,7 +168,7 @@ class Numpad(BaseGraph):
                         dist[(node.point, dir)] = INFINITY if node != start_node else 0
                         prev[(node.point, dir)] = (None, None)
 
-        pq = PriorityQueue([(0, start_node, None)])
+        pq = PriorityQueue([(0, start_node, start_dir)])
 
         while pq.size:
             cost, node, current_dir = pq.pop()
@@ -241,10 +246,7 @@ class Arrowpad(BaseGraph):
         return None
 
     def get_edges(self, node, current_dir):
-        if current_dir is None:
-            next_points = [(p, 1) for p in POINT_TO_DIR.keys()]
-        else:
-            next_points = CURRENT_DIR_TO_NEXT_POINTS[current_dir]
+        next_points = CURRENT_DIR_TO_NEXT_POINTS_ARROWPAD[current_dir]
 
         edges = []
         for p, cost in next_points:
@@ -260,9 +262,9 @@ class Arrowpad(BaseGraph):
 
         return 10
 
-    def dijkstra(self, start_node, end_node):
+    def dijkstra(self, start_node, end_node, start_dir):
         if start_node.point == end_node.point:
-            return []
+            return [], start_dir
 
         dist = {}
         prev = {}
@@ -274,7 +276,7 @@ class Arrowpad(BaseGraph):
                         dist[(node.point, dir)] = INFINITY if node != start_node else 0
                         prev[(node.point, dir)] = (None, None)
 
-        pq = PriorityQueue([(0, start_node, None)])
+        pq = PriorityQueue([(0, start_node, start_dir)])
 
         while pq.size:
             cost, node, current_dir = pq.pop()
@@ -337,9 +339,10 @@ def part1():
     def get_arrow2_path(path):
         prev = arrow2.start
         string_path = ""
+        dir = None
         for end in path:
             end_node = arrow2.char_to_node(end)
-            a2_path = arrow2.dijkstra(prev, end_node)
+            a2_path, dir = arrow2.dijkstra(prev, end_node, None)
             string_path += path_to_arrows(a2_path) + "A"
             prev = end_node
 
@@ -348,9 +351,10 @@ def part1():
     def get_arrow1_path(path):
         prev = arrow1.start
         string_path = ""
+        dir = None
         for end in path:
             end_node = arrow1.char_to_node(end)
-            a1_path = arrow1.dijkstra(prev, end_node)
+            a1_path, dir = arrow1.dijkstra(prev, end_node, None)
             string_path += path_to_arrows(a1_path) + "A"
             # print(string_path)
             prev = end_node
@@ -365,11 +369,12 @@ def part1():
     for struct in instructions:
         prev = m.start
         string_path = ""
+        dir = None
         print(struct)
         for end in struct:
             end_node = m.char_to_node(end)
             # print(prev, "->", end_node)
-            path = m.dijkstra(prev, end_node)
+            path, dir = m.dijkstra(prev, end_node, None)
             # print(path)
             string_path += path_to_arrows(path) + "A"
             # print(string_path)
@@ -400,6 +405,7 @@ def part1():
         total += struct_to_int(k) * len(v)
 
     # 173472 too high
+    # 176156 too high
     return total
 
 
