@@ -10,6 +10,11 @@ def read_file(filename):
     return file
 
 
+def parse_to_list(filename):
+    file = read_file(filename=filename)
+    return file.strip().split("\n")
+
+
 def parse_to_matrix(data):
     return Matrix(data=data)
 
