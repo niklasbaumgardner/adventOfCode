@@ -139,84 +139,35 @@ def all_connected(computers, graph):
     return True
 
 
-def binary_search(graph):
-    found = {}
-    low = 0
-    # high = len(graph.keys()) - 1
-
-    m = 0
-    for v in graph.values():
-        if len(v) > m:
-            m = len(v)
-    high = m
-
-    print(low, high)
-
-    while low < high:
-        length = low + (high - low) // 2  # Calculate the middle index
-        print(f"searching for length: {length}")
-
-        combs = combinations(graph.keys(), length)
-
-        for comb in combs:
-            if all_connected(comb, graph):
-                # found[length] =
-                if length in found:
-                    found[length].append(comb)
-                else:
-                    found[length] = [comb]
-
-                low = length + 1
-
-            else:
-                high = length + 1
-
-    print(found)
-
-
-def prune(combs, good, bad):
-    pruned = []
-
-    print(f"bad: {len(bad)}")
-    for comb in combs:
-        comb_set = frozenset(comb)
-        if not bad:
-            pruned.append(comb)
-        else:
-            for b in bad:
-                if len(b) == len(comb_set & b):
-                    bad.add(comb_set)
-                    break
-                else:
-                    pruned.append(comb)
-
-    return pruned
-
-
 def find_largest_group(graph):
-    good = set()
-    bad = set()
     found = {}
 
-    for length in range(3, 14):
-        print(f"searching length: {length}")
-        combs = combinations(graph.keys(), length)
-        pruned_combs = prune(combs, good, bad)
-        print(sum(1 for _ in combs), len(pruned_combs))
+    start_length = 2
 
-        for comb in pruned_combs:
-            if all_connected(comb, graph):
-                if length in found:
-                    found[length].append(comb)
-                else:
-                    found[length] = [comb]
-            else:
-                bad.add(frozenset(comb))
+    for k, v in graph.items():
+        group = set([k]) | v
 
-        if length not in found:
-            break
+        min_length = (max(found.keys() or [0]) or start_length) + 1
 
-    print(found[max(found.keys())])
+        for length in range(min_length, len(group)):
+            # print(f"searching length: {length}")
+
+            combs = combinations(group, length)
+
+            for comb in combs:
+                if all_connected(comb, graph):
+                    if length in found:
+                        found[length].append(comb)
+                    else:
+                        found[length] = [comb]
+
+    passwords = found[max(found.keys())]
+
+    if len(passwords) == 1:
+        return ",".join(sorted(passwords[0]))
+
+    for p in passwords:
+        print(",".join(sorted(p)))
     # print(found)
 
 
@@ -236,8 +187,8 @@ def part1():
         connections[a].add(b)
         connections[b].add(a)
 
-    for k, v in connections.items():
-        print(k, v)
+    # for k, v in connections.items():
+    #     print(k, v)
 
     # 1112 too low
     return get_groups_of_three_with_t_2(connections)
@@ -258,12 +209,12 @@ def part2():
         connections[a].add(b)
         connections[b].add(a)
 
-    for k, v in connections.items():
-        print(k, v)
+    # for k, v in connections.items():
+    #     print(k, v)
 
-    print(connections.keys())
+    # print(connections.keys())
 
-    find_largest_group(connections)
+    return find_largest_group(connections)
 
     # 1112 too low
     # return get_groups_of_three_with_t(connections)
