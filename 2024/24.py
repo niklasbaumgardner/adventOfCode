@@ -29,66 +29,88 @@ def parse_data(data):
         name, val = line.split(": ")
         starting[name] = int(val)
 
-    rules = []
+    rules = {}
+    zs = []
     for line in second.split("\n"):
         logic, end_name = line.split(" -> ")
         a, gate, b = logic.split(" ")
         if gate == "AND":
             gate = gate_and
         elif gate == "OR":
-            gate = gate_and
+            gate = gate_or
         else:
             gate = gate_xor
-        rules.append([a, gate, b, end_name])
+        rules[end_name] = dict(a=a, gate=gate, b=b, end_name=end_name, answer=None)
+        if end_name.startswith("z"):
+            zs.append(end_name)
 
+    zs.sort(reverse=True)
+    # print(zs)
     # print(starting)
     # print(rules)
     # print(first)
     # print(second)
-    return starting, rules
+    return starting, rules, zs
 
 
-# def do_rule()
-def do_logic(starting, rules):
-    known_rules = set(starting.keys())
-    unknown_rules = set()
-    for rule in rules:
-        a, gate, b, end_name = rule
-        if a not in known_rules:
-            unknown_rules.add(a)
-        if b not in known_rules:
-            unknown_rules.add(b)
-        if end_name not in known_rules:
-            unknown_rules.add(end_name)
+def solve_rule(rule, initial_values, rules_map):
+    a, gate, b, end_name, answer = (
+        rule["a"],
+        rule["gate"],
+        rule["b"],
+        rule["end_name"],
+        rule["answer"],
+    )
 
-    nums = {}
-    # for rule in rules:
-    i = 0
-    while unknown_rules:
-        rule = rules[i % len(rules)]
+    if answer is not None:
+        return answer
 
-        a, gate, b, end_name = rule
-        if a in starting and b in starting:
-            answer = gate(starting[a], starting[b])
-            nums[end_name] = answer
-            starting[end_name] = answer
-            unknown_rules.discard(end_name)
+    if a not in initial_values and rules_map[a]["answer"] is None:
+        solve_rule(rules_map[a], initial_values, rules_map)
 
-        i += 1
-    print(nums)
+    if b not in initial_values and rules_map[b]["answer"] is None:
+        solve_rule(rules_map[b], initial_values, rules_map)
 
-    nums_sorted = sorted(nums.keys())
-    actual_nums = [nums[n] for n in nums_sorted]
-    print(actual_nums)
-    return int("".join(actual_nums), 2)
+    a_val = None
+    if a in initial_values:
+        a_val = initial_values[a]
+    else:
+        a_val = rules_map[a]["answer"]
+
+    b_val = None
+    if b in initial_values:
+        b_val = initial_values[b]
+    else:
+        b_val = rules_map[b]["answer"]
+
+    rule["answer"] = gate(a_val, b_val)
+
+
+def find_all_z(initial_values, rules_map, zs):
+    for z in zs:
+        # print(z)
+        rule_dict = rules_map[z]
+        solve_rule(rule_dict, initial_values, rules_map)
+
+    nums = [
+        [r["end_name"], r["answer"]]
+        for r in rules_map.values()
+        if r["answer"] is not None and r["end_name"].startswith("z")
+    ]
+    nums.sort(key=lambda x: x[0], reverse=True)
+    # print(nums)
+    bin_num = "".join([str(x[1]) for x in nums])
+
+    # print(bin_num)
+
+    return int(bin_num, 2)
 
 
 def part1():
     # print(DATA)
-    starting, rules = parse_data(DATA)
-    nums = do_logic(starting, rules)
+    starting, rules, zs = parse_data(DATA)
 
-    return
+    return find_all_z(starting, rules, zs)
 
 
 def part2():
